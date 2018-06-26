@@ -1,0 +1,74 @@
+<html>
+<head>
+<meta charset="UTF-8"> <meta name="description" content="Visual Studio Code tutorials">
+<title>Visual Studio Code mirror</title>
+<link rel="stylesheet" type="text/css" href="GitHub2.css">
+</head>
+<body>
+
+<div id="content">
+# Welcome
+
+Bienvenue sur le mirroir interne de [Visual Studio Code](http://code.visualstudio.com).
+
+## Installation
+
+1. Télécharger le [paquet](code_1.24.0-1528306776_amd64.deb) et taper dans une console :
+
+    ```
+    $ sudo dpkg -i code_1.24.0-1528306776_amd64.deb
+    ```
+
+2. Désactiver les mises à jour automatiques et la télémétrie dans les [Settings](https://code.visualstudio.com/docs/getstarted/settings).
+
+    ```
+    {
+        "update.channel": "none",
+        "telemetry.enableTelemetry": false,
+        "telemetry.enableCrashReporter": false,
+        "extensions.autoUpdate": false
+    }
+    ```
+
+3. Installer les extensions
+
+**ATTENTION** si vous installez, l'extension C/C++, vous devez aussi installer l'extension `cpptools-linux` _après_.
+
+## Extensions
+</div>
+
+
+<div id="md">
+
+</div>
+
+<!--script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.8.6/showdown.min.js"></script-->
+<script src="showdown.min.js"></script>
+
+
+<script type="text/javascript">
+function httpGet(theUrl)
+{
+    var xmlHttp = null;
+    xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("GET", theUrl, false);
+    xmlHttp.send(null);
+    return xmlHttp.responseText;
+}
+</script>
+
+<script>
+    var conv = new showdown.Converter();
+    conv.setOption('tables', true);
+   // conv.setOption('ghCodeBlocks', true);
+    //conv.setFlavor('github');
+
+    var txt = document.getElementById('content').innerHTML;
+    document.getElementById('content').innerHTML = conv.makeHtml(txt);
+
+    txt = httpGet('README.md');
+    document.getElementById('md').innerHTML = conv.makeHtml(txt);
+</script>
+
+</body>
+</html>
