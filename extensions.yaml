@@ -27,3 +27,5 @@ extensions:
   - PeterJausovec.vscode-docker
   - ms-vscode.Go
   - redhat.java
+  - zxh404.vscode-proto3
+

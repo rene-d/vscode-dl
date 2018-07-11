@@ -45,7 +45,7 @@ def download(url, file):
             os.utime(file, (ts, ts))
         return True
     else:
-        print(heavy_ballot_x, r.status_code)
+        print(heavy_ballot_x, r.status_code, url)
         return False
 
 
@@ -83,6 +83,7 @@ if args.x:
         conf = yaml.load(open("extensions.yaml"))
         if 'extensions' in conf:
             listed = set(conf['extensions'])
+            print("ok")
         conf = None
 
     extensions = list(installed.union(listed))
@@ -176,7 +177,7 @@ if args.x:
 
             if key == "ms-vscode.cpptools":
                 for platform in ['linux', 'win32', 'osx', 'linux32']:
-                    url = f"https://github.com/Microsoft/vscode-cpptools/releases/download/{version}/cpptools-{platform}.vsix"
+                    url = f"https://github.com/Microsoft/vscode-cpptools/releases/download/v{version}/cpptools-{platform}.vsix"
                     vsix = f'vsix/{key}-{platform}-{version}.vsix'
                     if not os.path.exists(vsix):
                         print("{:20} {:35} {:10} {} downloading...".format("", "cpptools-" + platform, version, heavy_ballot_x))
