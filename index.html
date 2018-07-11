@@ -6,6 +6,13 @@
 </head>
 <body>
 
+
+<center>
+    <img src="images/home-intellisense.svg" height="48px">
+    <img src="images/home-git.svg" height="48px">
+    <img src="images/home-debug.svg" height="48px">
+</center>
+
 <div id="content">
 # Welcome
 
@@ -13,10 +20,10 @@ Bienvenue sur le mirroir interne de [Visual Studio Code](http://code.visualstudi
 
 ## Installation
 
-1. Télécharger le [paquet](code_1.24.0-1528306776_amd64.deb) et taper dans une console :
+1. Télécharger le [paquet Debian](@@CODE_URL@@) et taper dans une console :
 
     ```
-    $ sudo dpkg -i code_1.24.0-1528306776_amd64.deb
+    $ sudo dpkg -i @@CODE_DEB@@
     ```
 
 2. Désactiver les mises à jour automatiques et la télémétrie dans les [Settings](https://code.visualstudio.com/docs/getstarted/settings).
@@ -32,19 +39,22 @@ Bienvenue sur le mirroir interne de [Visual Studio Code](http://code.visualstudi
 
 3. Installer les extensions
 
-**ATTENTION** si vous installez, l'extension C/C++, vous devez aussi installer l'extension `cpptools-linux` _après_.
+<center><img src="images/Hundreds-of-Extensions.png" height="160px"></center>
 
 ## Extensions
+
+Pour installer une extension :
+- télécharger le fichier `.vsix` en cliquant sur le lien de la colonne **Version**
+- taper dans une console la commande : `code --install-extension <fichier>.vsix`
+
+**ATTENTION** si vous installez l'extension C/C++, vous devez aussi installer l'extension `cpptools-linux` correspondante _après_ (non listée, voir [ici](vsix/)).
 </div>
 
-
 <div id="md">
-
 </div>
 
 <!--script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.8.6/showdown.min.js"></script-->
 <script src="showdown.min.js"></script>
-
 
 <script type="text/javascript">
 function httpGet(theUrl)
@@ -60,13 +70,16 @@ function httpGet(theUrl)
 <script>
     var conv = new showdown.Converter();
     conv.setOption('tables', true);
-   // conv.setOption('ghCodeBlocks', true);
+    //conv.setOption('ghCodeBlocks', true);
     //conv.setFlavor('github');
 
     var txt = document.getElementById('content').innerHTML;
+    version = JSON.parse(httpGet('code.json'));
+    txt = txt.replace(/@@CODE_DEB@@/g, version.code_deb)
+    txt = txt.replace(/@@CODE_URL@@/g, version.code_url)
     document.getElementById('content').innerHTML = conv.makeHtml(txt);
 
-    txt = httpGet('README.md');
+    txt = httpGet('extensions.md');
     document.getElementById('md').innerHTML = conv.makeHtml(txt);
 </script>
 

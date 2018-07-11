@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import sys
 import argparse
 import subprocess
 import re
@@ -10,6 +11,8 @@ import datetime
 import email.utils
 import dateutil.parser
 import yaml
+import bz2
+import json
 
 
 check_mark = "\033[32m\N{check mark}\033[0m"            # ✔
@@ -49,44 +52,8 @@ def download(url, file):
         return False
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--scan", help="scan and download installed extensions", action='store_true')
-parser.add_argument("-x", help="scan and download installed extensions", action='store_true')
-parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
-args = parser.parse_args()
 
-if args.scan:
-    s = subprocess.check_output("code --list-extensions --show-versions", shell=True)
-    # print(s.decode())
-    for publisher, extension_name, version in re.findall(r'(.*)\.(.*)@(.*)', s.decode()):
-
-        #url = f"https://marketplace.visualstudio.com/_apis/public/gallery/publishers/{publisher}/vsextensions/{extension_name}/{version}/vspackage"
-        url = f"https://{publisher}.gallery.vsassets.io/_apis/public/gallery/publisher/{publisher}/extension/{extension_name}/{version}/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
-        vsix = f"vsix/{publisher}.{extension_name}-{version}.vsix"
-
-        if os.path.exists(vsix) is False:
-            cmd = f"curl -s -o '{vsix}' '{url}'"
-            print("{:20} {:35} {:10} {} : downloading...".format(publisher, extension_name, version, heavy_ballot_x))
-            subprocess.call(cmd, shell=True)
-        else:
-            print("{:20} {:35} {:10} {}".format(publisher, extension_name, version, check_mark))
-
-
-if args.x:
-
-    # get installed extensions
-    s = subprocess.check_output("code --list-extensions", shell=True)
-    installed = set(s.decode().split())
-
-    # get the listed extensions
-    if os.path.exists("extensions.yaml"):
-        conf = yaml.load(open("extensions.yaml"))
-        if 'extensions' in conf:
-            listed = set(conf['extensions'])
-            print("ok")
-        conf = None
-
-    extensions = list(installed.union(listed))
+def dl_extensions(extensions):
 
     # markdown skeliton
     md = []
@@ -114,8 +81,7 @@ if args.x:
     # query the gallery
     req = requests.post("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery", json=data, headers=headers)
     res = req.json()
-    if args.verbose:
-        pprint.pprint(res)
+    # if args.verbose: pprint.pprint(res)
 
     # analyze the response
     if 'results' in res and 'extensions' in res['results'][0]:
@@ -169,7 +135,6 @@ if args.x:
                 url = e['versions'][0]['assetUri'] + '/Microsoft.VisualStudio.Services.VSIXPackage'
 
                 print("{:20} {:35} {:10} {} downloading...".format(e['publisher']['publisherName'], e['extensionName'], version, heavy_ballot_x))
-
                 download(url, vsix)
             else:
                 print("{:20} {:35} {:10} {}".format(e['publisher']['publisherName'], e['extensionName'], version, check_mark))
@@ -196,6 +161,118 @@ if args.x:
                     download(url, icon)
 
 
-    with open("README.md", "w") as f:
+    with open("extensions.md", "w") as f:
         for i in md:
             print('|'.join(i), file=f)
+
+
+
+def dl_code():
+
+    repo = "http://packages.microsoft.com/repos/vscode"
+    url = f"{repo}/dists/stable/main/binary-amd64/Packages.bz2"
+    r = requests.get(url)
+    if r.status_code == 200:
+        data = bz2.decompress(r.content).decode('utf-8')
+
+        packages = []
+        sect = {}
+        key, value = None, None
+
+        def _add_value():                       # save key/value into current section
+            nonlocal key, value, sect
+            if key and value:
+                sect[key] = value
+
+                if key == 'version':
+                    # crée une chaîne qui devrait être l'ordre des numéros de version
+                    sect['_version'] = '|'.join(x.rjust(16, '0') if x.isdigit() else x.ljust(16) for x in re.split(r'\W', value))
+
+                key = value = None
+
+        def _add_sect():
+            nonlocal sect, packages
+            _add_value()
+            if len(sect) != 0:
+                packages.append(sect)
+                sect = {}                       # start a new section
+
+        for line in data.split('\n'):
+            if line == '':                      # start a new section
+                _add_sect()
+            elif line[0] == ' ':                # continue a key/value
+                if value is not None:
+                    value += line
+            else:                               # start a new key/value
+                _add_value()
+                key, value = line.split(':', maxsplit=1)
+                key = key.lower()               # make key always lowercase
+                value = value.lstrip()
+
+        _add_sect()                             # flush section if any
+
+        #packages.sort(key=lambda x: re.split(r'\W', x['version']))
+        packages.sort(key=lambda x: x['_version'], reverse=True)
+
+        latest = None
+        for p in packages:
+            if p['package'] == 'code':
+                latest = p
+                break
+
+        if latest:
+            filename = latest['filename']
+            url = f"{repo}/{filename}"
+            deb_filename = os.path.basename(filename)
+            filename = os.path.join("code", deb_filename)
+
+            if os.path.exists(filename):
+                print("{:50} {:20} {}".format(latest['package'], latest['version'], check_mark))
+            else:
+                print("{:50} {:20} {} downloading...".format(latest['package'], latest['version'], heavy_ballot_x))
+                download(url, filename)
+
+            with open("code.json", "w") as f:
+                json.dump({'code_url': filename, 'code_deb': deb_filename}, f)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    #parser.add_argument("--scan", help="scan and download installed extensions", action='store_true')
+    parser.add_argument("-f", "--conf", help="configuration file", default="extensions.yaml")
+    parser.add_argument("-i", "--installed", help="scan installed extensions", action='store_true')
+    parser.add_argument("-x", help="extra feature", action='store_true')
+    parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
+
+    args = parser.parse_args()
+
+    dl_code()
+    print()
+
+    extensions = list()
+
+    # get the listed extensions
+    if os.path.exists(args.conf):
+        conf = yaml.load(open(args.conf))
+        if 'extensions' in conf:
+            listed = set(conf['extensions'])
+            extensions = list(listed.union(extensions))
+        conf = None
+
+    if args.installed:
+        # get installed extensions
+        s = subprocess.check_output("code --list-extensions", shell=True)
+        installed = set(s.decode().split())
+
+        # conf = yaml.load(open(args.conf))
+        # conf['installed'] = list(installed)
+        # conf['extensions'] = list(listed - installed)
+        # yaml.dump(conf, stream=sys.stdout, default_flow_style=False)
+
+        extensions = list(installed.union(extensions))
+
+    dl_extensions(extensions)
+
+
+if __name__ == '__main__':
+    main()
