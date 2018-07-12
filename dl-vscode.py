@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+# rene-d 2018
 
 import sys
 import argparse
@@ -17,7 +18,6 @@ import json
 
 check_mark = "\033[32m\N{check mark}\033[0m"            # ✔
 heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"    # ✘
-
 
 
 my_extensions = ['ms-vscode.cpptools',
@@ -39,7 +39,9 @@ def my_parsedate(text):
 def download(url, file):
     r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
-        os.makedirs(os.path.dirname(file), exist_ok=True)
+        d = os.path.dirname(file)
+        if d != "":
+            os.makedirs(d, exist_ok=True)
         with open(file, 'wb') as f:
             f.write(r.content)
         if r.headers.get('last-modified'):
@@ -50,7 +52,6 @@ def download(url, file):
     else:
         print(heavy_ballot_x, r.status_code, url)
         return False
-
 
 
 def dl_extensions(extensions):
@@ -122,12 +123,11 @@ def dl_extensions(extensions):
 
             # colonne 5: date de mise à jour
             d = dateutil.parser.parse(e['versions'][0]['lastUpdated'])
-            row.append(str(d))
+            row.append(d.strftime("%Y/%m/%d&nbsp;%H:%M:%S") )
 
             md.append(row)
 
-
-
+            # download the extension
             if not os.path.exists(vsix):
                 if os.path.exists(icon):
                     os.unlink(icon)
@@ -139,18 +139,32 @@ def dl_extensions(extensions):
             else:
                 print("{:20} {:35} {:10} {}".format(e['publisher']['publisherName'], e['extensionName'], version, check_mark))
 
-
+            # download the supplementary files for C/C++ extension
             if key == "ms-vscode.cpptools":
-                for platform in ['linux', 'win32', 'osx', 'linux32']:
+                # platforms = ['linux', 'win32', 'osx', 'linux32']
+                platforms = ['linux']
+                for platform in platforms:
                     url = f"https://github.com/Microsoft/vscode-cpptools/releases/download/v{version}/cpptools-{platform}.vsix"
                     vsix = f'vsix/{key}-{platform}-{version}.vsix'
                     if not os.path.exists(vsix):
                         print("{:20} {:35} {:10} {} downloading...".format("", "cpptools-" + platform, version, heavy_ballot_x))
-                        download(url, vsix)
+                        ok = download(url, vsix)
                     else:
                         print("{:20} {:35} {:10} {}".format("", "cpptools-" + platform, version, check_mark))
+                        ok = True
 
+                    if ok:
+                        d = datetime.datetime.fromtimestamp(os.stat(vsix).st_mtime).strftime("%Y/%m/%d&nbsp;%H:%M:%S")
 
+                        row = [f"![{e['displayName']}]({icon})",                             # icon
+                            f"[vscode-cpptools](https://github.com/Microsoft/vscode-cpptools/releases/)",     # name
+                            f"{key}-{platform}",                                             # description
+                            "[Microsoft](https://github.com/Microsoft/vscode-cpptools)",     # author
+                            f"[{version}]({vsix})",                                          # version/download link
+                            f"{d}"]                                                          # date
+                        md.append(row)
+
+            # download icon
             if not os.path.exists(icon):
                 os.makedirs("icons", exist_ok=True)
                 url = e['versions'][0]['assetUri'] + '/Microsoft.VisualStudio.Services.Icons.Small'
@@ -160,11 +174,10 @@ def dl_extensions(extensions):
                     url = 'https://cdn.vsassets.io/v/20180521T120403/_content/Header/default_icon.png'
                     download(url, icon)
 
-
+    # write the markdown catalog file
     with open("extensions.md", "w") as f:
         for i in md:
             print('|'.join(i), file=f)
-
 
 
 def dl_code():
@@ -238,13 +251,23 @@ def dl_code():
 
 def main():
     parser = argparse.ArgumentParser()
-    #parser.add_argument("--scan", help="scan and download installed extensions", action='store_true')
+    # parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
     parser.add_argument("-f", "--conf", help="configuration file", default="extensions.yaml")
     parser.add_argument("-i", "--installed", help="scan installed extensions", action='store_true')
-    parser.add_argument("-x", help="extra feature", action='store_true')
-    parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
+    # parser.add_argument("-x", help="extra feature", action='store_true')
+    parser.add_argument("--assets", help="download css and images", action='store_true')
 
     args = parser.parse_args()
+
+    if args.assets:
+        # download("https://cdn.rawgit.com/showdownjs/showdown/master/dist/showdown.min.js", "showdown.min.js")
+        download("https://cdnjs.cloudflare.com/ajax/libs/showdown/1.8.6/showdown.min.js", "showdown.min.js")
+        download("https://raw.githubusercontent.com/gcollazo/mou-theme-github2/master/GitHub2.css", "GitHub2.css")
+        download("https://code.visualstudio.com/assets/images/home-debug.svg", "images/home-debug.svg")
+        download("https://code.visualstudio.com/assets/images/home-git.svg", "images/home-git.svg")
+        download("https://code.visualstudio.com/assets/images/home-intellisense.svg", "images/home-intellisense.svg")
+        download("https://code.visualstudio.com/assets/images/Hundreds-of-Extensions.png", "images/Hundreds-of-Extensions.png")
+        exit(0)
 
     dl_code()
     print()
