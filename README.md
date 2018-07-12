@@ -25,6 +25,9 @@ Download assets for `index.hrml` (showdown, .css and images) :
 ./dl-vscode.py --assets
 ````
 
-## Screenshot
+## Links
 
-![Screenshot](dl-vscode.png)
+* [Official site](https://code.visualstudio.com/)
+* [Official GitHub](https://github.com/microsoft/vscode)
+* [Extensions](https://marketplace.visualstudio.com/vscode)
+* [Awesome list for Visual Studio Code](https://github.com/viatsko/awesome-vscode)
