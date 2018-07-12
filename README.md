@@ -8,6 +8,16 @@ The program also creates a catalog in Markdown that can be incorporated into a w
 
 When it is run again, it updates the extensions and VSCode.
 
+## Requirements
+
+* [Python3](https://www.python.org/downloads/) 3.6 or 3.7 (older ones *won't* work)
+* [Requests](http://docs.python-requests.org/en/master/)
+* [PyYAML](https://pyyaml.org)
+
+````
+pip3 install -U requests PyYAML
+````
+
 ## Usage
 
 Download Visual Studio Code and extensions listed in `extensions.yaml` :
