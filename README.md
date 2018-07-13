@@ -41,3 +41,7 @@ Download assets for `index.hrml` (showdown, .css and images) :
 * [Official GitHub](https://github.com/microsoft/vscode)
 * [Extensions](https://marketplace.visualstudio.com/vscode)
 * [Awesome list for Visual Studio Code](https://github.com/viatsko/awesome-vscode)
+
+## License
+
+[Unlicense](http://unlicense.org) aka. Public Domain ;-)

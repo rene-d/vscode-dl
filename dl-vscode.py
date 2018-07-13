@@ -7,7 +7,6 @@ import subprocess
 import re
 import os
 import requests
-import pprint
 import datetime
 import email.utils
 import dateutil.parser
@@ -16,27 +15,18 @@ import bz2
 import json
 
 
+# be a little more visual like npm ;-)
 check_mark = "\033[32m\N{check mark}\033[0m"            # ✔
 heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"    # ✘
 
 
-my_extensions = ['ms-vscode.cpptools',
-                 'ms-python.python',
-                 'MS-CEINTL.vscode-language-pack-fr',
-                 'vector-of-bool.cmake-tools']
-
-
-def reorder_extensions(f):
-    if f in my_extensions:
-        return my_extensions.index(f)
-    return len(my_extensions) + 1
-
-
 def my_parsedate(text):
+    """ parse date from http headers response """
     return datetime.datetime(*email.utils.parsedate(text)[:6])
 
 
 def download(url, file):
+    """ download a file and set last modified time """
     r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
         d = os.path.dirname(file)
@@ -55,6 +45,7 @@ def download(url, file):
 
 
 def dl_extensions(extensions):
+    """ download or update extensions """
 
     # markdown skeliton
     md = []
@@ -66,8 +57,8 @@ def dl_extensions(extensions):
         "filters": [
             {
                 "criteria": [
-                    { "filterType": 8, "value": "Microsoft.VisualStudio.Code" },
-                    { "filterType": 12, "value": "4096" },
+                    {"filterType": 8, "value": "Microsoft.VisualStudio.Code"},
+                    {"filterType": 12, "value": "4096"},
                 ],
             }
         ],
@@ -80,7 +71,8 @@ def dl_extensions(extensions):
     headers = {'Content-type': 'application/json', 'Accept': 'application/json;api-version=3.0-preview.1'}
 
     # query the gallery
-    req = requests.post("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery", json=data, headers=headers)
+    req = requests.post("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery",
+                        json=data, headers=headers)
     res = req.json()
     # if args.verbose: pprint.pprint(res)
 
@@ -98,7 +90,7 @@ def dl_extensions(extensions):
 
             row = []
 
-            key =  e['publisher']['publisherName'] + '.' + e['extensionName']
+            key = e['publisher']['publisherName'] + '.' + e['extensionName']
             version = e['versions'][0]['version']
             vsix = 'vsix/' + key + '-' + version + '.vsix'
             icon = 'icons/' + key + '.png'
@@ -123,7 +115,7 @@ def dl_extensions(extensions):
 
             # colonne 5: date de mise à jour
             d = dateutil.parser.parse(e['versions'][0]['lastUpdated'])
-            row.append(d.strftime("%Y/%m/%d&nbsp;%H:%M:%S") )
+            row.append(d.strftime("%Y/%m/%d&nbsp;%H:%M:%S"))
 
             md.append(row)
 
@@ -134,7 +126,8 @@ def dl_extensions(extensions):
 
                 url = e['versions'][0]['assetUri'] + '/Microsoft.VisualStudio.Services.VSIXPackage'
 
-                print("{:20} {:35} {:10} {} downloading...".format(e['publisher']['publisherName'], e['extensionName'], version, heavy_ballot_x))
+                print("{:20} {:35} {:10} {} downloading...".format(
+                    e['publisher']['publisherName'], e['extensionName'], version, heavy_ballot_x))
                 download(url, vsix)
             else:
                 print("{:20} {:35} {:10} {}".format(e['publisher']['publisherName'], e['extensionName'], version, check_mark))
@@ -157,11 +150,11 @@ def dl_extensions(extensions):
                         d = datetime.datetime.fromtimestamp(os.stat(vsix).st_mtime).strftime("%Y/%m/%d&nbsp;%H:%M:%S")
 
                         row = [f"![{e['displayName']}]({icon})",                             # icon
-                            f"[vscode-cpptools](https://github.com/Microsoft/vscode-cpptools/releases/)",     # name
-                            f"{key}-{platform}",                                             # description
-                            "[Microsoft](https://github.com/Microsoft/vscode-cpptools)",     # author
-                            f"[{version}]({vsix})",                                          # version/download link
-                            f"{d}"]                                                          # date
+                               f"[vscode-cpptools](https://github.com/Microsoft/vscode-cpptools/releases/)",     # name
+                               f"{key}-{platform}",                                             # description
+                               "[Microsoft](https://github.com/Microsoft/vscode-cpptools)",     # author
+                               f"[{version}]({vsix})",                                          # version/download link
+                               f"{d}"]                                                          # date
                         md.append(row)
 
             # download icon
@@ -181,6 +174,7 @@ def dl_extensions(extensions):
 
 
 def dl_code():
+    """ download code from Microsoft debian-like repo """
 
     repo = "http://packages.microsoft.com/repos/vscode"
     url = f"{repo}/dists/stable/main/binary-amd64/Packages.bz2"
@@ -199,7 +193,8 @@ def dl_code():
 
                 if key == 'version':
                     # crée une chaîne qui devrait être l'ordre des numéros de version
-                    sect['_version'] = '|'.join(x.rjust(16, '0') if x.isdigit() else x.ljust(16) for x in re.split(r'\W', value))
+                    sect['_version'] = '|'.join(x.rjust(16, '0') if x.isdigit() else x.ljust(16)
+                                                for x in re.split(r'\W', value))
 
                 key = value = None
 
@@ -224,7 +219,6 @@ def dl_code():
 
         _add_sect()                             # flush section if any
 
-        #packages.sort(key=lambda x: re.split(r'\W', x['version']))
         packages.sort(key=lambda x: x['_version'], reverse=True)
 
         latest = None
@@ -250,15 +244,17 @@ def dl_code():
 
 
 def main():
+    """ main function """
+
     parser = argparse.ArgumentParser()
-    # parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
+    parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
     parser.add_argument("-f", "--conf", help="configuration file", default="extensions.yaml")
     parser.add_argument("-i", "--installed", help="scan installed extensions", action='store_true')
-    # parser.add_argument("-x", help="extra feature", action='store_true')
     parser.add_argument("--assets", help="download css and images", action='store_true')
 
     args = parser.parse_args()
 
+    # download assets
     if args.assets:
         # download("https://cdn.rawgit.com/showdownjs/showdown/master/dist/showdown.min.js", "showdown.min.js")
         download("https://cdnjs.cloudflare.com/ajax/libs/showdown/1.8.6/showdown.min.js", "showdown.min.js")
@@ -269,9 +265,11 @@ def main():
         download("https://code.visualstudio.com/assets/images/Hundreds-of-Extensions.png", "images/Hundreds-of-Extensions.png")
         exit(0)
 
+    # download VSCode
     dl_code()
     print()
 
+    # download extensions
     extensions = list()
 
     # get the listed extensions
@@ -287,10 +285,14 @@ def main():
         s = subprocess.check_output("code --list-extensions", shell=True)
         installed = set(s.decode().split())
 
-        # conf = yaml.load(open(args.conf))
-        # conf['installed'] = list(installed)
-        # conf['extensions'] = list(listed - installed)
-        # yaml.dump(conf, stream=sys.stdout, default_flow_style=False)
+        if args.verbose:
+            conf = yaml.load(open(args.conf))
+            conf['installed'] = list(installed)
+            conf['not-installed'] = list(listed - installed)
+            conf['not-listed'] = list(installed - listed)
+            sys.stdout.write("\033[1;36m")
+            yaml.dump(conf, stream=sys.stdout, default_flow_style=False)
+            sys.stdout.write("\033[0m\n")
 
         extensions = list(installed.union(extensions))
 
