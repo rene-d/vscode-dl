@@ -5,7 +5,6 @@ extensions:
   - bierner.markdown-preview-github-styles
   - donjayamanne.githistory
   - eamodio.gitlens
-  - felixrieseberg.vsc-travis-ci-status
   - flipphillips.wolfram-language
   - formulahendry.code-runner
   - goessner.mdmath
