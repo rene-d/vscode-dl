@@ -2,11 +2,11 @@
 
 ## Description
 
-This Python3 script downloads the latest Linux version of [Visual Studio Code](http://code.visualstudio.com) and some extensions for installation on computers without Internet connection.
+This Python3 script downloads the latest Linux version of [Visual Studio Code](http://code.visualstudio.com) and some extensions for installation on computers without Internet connection or proxy restrictions.
 
 The program also creates a catalog in Markdown that can be incorporated into a web page, like `index.html`.
 
-When it is run again, it updates the extensions and VSCode.
+When it is run again, it tries to update extensions and VSCode to their lastest version.
 
 ## Requirements
 
@@ -14,24 +14,24 @@ When it is run again, it updates the extensions and VSCode.
 * [Requests](http://docs.python-requests.org/en/master/)
 * [PyYAML](https://pyyaml.org)
 
-````bash
+````
 pip3 install -U requests PyYAML
 ````
 
 ## Usage
 
 Download Visual Studio Code and extensions listed in `extensions.yaml` :
-````bash
+````
 python3 dl-vscode.py
 ````
 
 Scan installed extensions and add them to the download list :
-````bash
+````
 python3 dl-vscode.py -i
 ````
 
-Download assets for `index.hrml` (javascript, .css and images) :
-````bash
+Download assets for `index.html` (javascript, .css and images) :
+````
 python3 dl-vscode.py --assets
 ````
 
@@ -41,6 +41,8 @@ python3 dl-vscode.py --assets
 * [Official GitHub](https://github.com/microsoft/vscode)
 * [Extensions](https://marketplace.visualstudio.com/vscode)
 * [Awesome list for Visual Studio Code](https://github.com/viatsko/awesome-vscode)
+* [markdown-it](https://github.com/markdown-it/markdown-it)
+* [highlight.js](https://github.com/isagalaev/highlight.js)
 
 ## License
 
