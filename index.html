@@ -3,7 +3,7 @@
 <meta charset="UTF-8"> <meta name="description" content="Visual Studio Code mirror">
 <title>Visual Studio Code mirror</title>
 <link rel="stylesheet" type="text/css" href="GitHub2.css">
-<link rel="stylesheet" type="text/css" href="default.min.css">
+<link rel="stylesheet" type="text/css" href="vs2015.min.css">
 </head>
 <body>
 
@@ -22,11 +22,11 @@ Bienvenue sur le mirroir interne de [Visual Studio Code](http://code.visualstudi
 
 1. Télécharger le [paquet Debian](@@CODE_URL@@) et taper dans une console :
 
-    ```
+    ````
     $ sudo dpkg -i @@CODE_DEB@@
-    ```
+    ````
 
-2. Désactiver les mises à jour automatiques et la télémétrie dans les [Settings](https://code.visualstudio.com/docs/getstarted/settings).
+2. Désactiver les mises à jour automatiques et la télémétrie dans les [Settings](https://code.visualstudio.com/docs/getstarted/settings) (`Ctrl ,` ou `⌘ ,` pour y accéder):
 
     ````json
     {
@@ -68,16 +68,15 @@ function httpGet(theUrl)
 </script>
 
 <script>
-    // Actual default values
     var md = window.markdownit({
         html: true,
         highlight: function (str, lang) {
             if (lang && hljs.getLanguage(lang)) {
-            try {
-                return hljs.highlight(lang, str).value;
-            } catch (__) {
-                console.log("error with language", lang);
-            }
+                try {
+                    return '<pre class="hljs"><code>' +
+                           hljs.highlight(lang, str, true).value +
+                           '</code></pre>';
+                } catch (__) {}
             }
 
             return ''; // use external default escaping

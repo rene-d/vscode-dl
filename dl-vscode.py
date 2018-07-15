@@ -256,11 +256,12 @@ def main():
 
     # download assets
     if args.assets:
-        # Showdown JS: Markdown to HTML converter
-        # download("https://cdn.rawgit.com/showdownjs/showdown/master/dist/showdown.min.js", "showdown.min.js")
-        download("https://cdnjs.cloudflare.com/ajax/libs/showdown/1.8.6/showdown.min.js", "showdown.min.js")
+        # markdown-it
+        download("https://cdnjs.cloudflare.com/ajax/libs/markdown-it/8.4.1/markdown-it.min.js", "markdown-it.min.js")
+        download("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js", "highlight.min.js")
+        download("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/vs2015.min.css", "vs2015.min.css")
 
-        # Mou/MacDown stylesheet
+        # Mou/MacDown GitHub like stylesheet
         download("https://raw.githubusercontent.com/gcollazo/mou-theme-github2/master/GitHub2.css", "GitHub2.css")
 
         # images from VSCode homepage
