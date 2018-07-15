@@ -14,25 +14,25 @@ When it is run again, it updates the extensions and VSCode.
 * [Requests](http://docs.python-requests.org/en/master/)
 * [PyYAML](https://pyyaml.org)
 
-````
+````bash
 pip3 install -U requests PyYAML
 ````
 
 ## Usage
 
 Download Visual Studio Code and extensions listed in `extensions.yaml` :
-````
-./dl-vscode.py
+````bash
+python3 dl-vscode.py
 ````
 
 Scan installed extensions and add them to the download list :
-````
-./dl-vscode.py -i
+````bash
+python3 dl-vscode.py -i
 ````
 
-Download assets for `index.hrml` (showdown, .css and images) :
-````
-./dl-vscode.py --assets
+Download assets for `index.hrml` (javascript, .css and images) :
+````bash
+python3 dl-vscode.py --assets
 ````
 
 ## Links

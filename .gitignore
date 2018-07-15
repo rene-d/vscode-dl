@@ -1,7 +1,9 @@
 .vscode/
 
 GitHub2.css
-showdown.min.js
+markdown-it.min.js
+highlight.min.js
+default.min.css
 images/
 
 code.json

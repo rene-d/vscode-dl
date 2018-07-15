@@ -3,6 +3,7 @@
 <meta charset="UTF-8"> <meta name="description" content="Visual Studio Code mirror">
 <title>Visual Studio Code mirror</title>
 <link rel="stylesheet" type="text/css" href="GitHub2.css">
+<link rel="stylesheet" type="text/css" href="default.min.css">
 </head>
 <body>
 
@@ -27,14 +28,14 @@ Bienvenue sur le mirroir interne de [Visual Studio Code](http://code.visualstudi
 
 2. Désactiver les mises à jour automatiques et la télémétrie dans les [Settings](https://code.visualstudio.com/docs/getstarted/settings).
 
-    ```
+    ````json
     {
         "update.channel": "none",
         "telemetry.enableTelemetry": false,
         "telemetry.enableCrashReporter": false,
         "extensions.autoUpdate": false
     }
-    ```
+    ````
 
 3. Installer les extensions
 
@@ -52,7 +53,8 @@ Pour installer une extension :
 <div id="md">
 </div>
 
-<script src="showdown.min.js"></script>
+<script src="markdown-it.min.js"></script>
+<script src="highlight.min.js"></script>
 
 <script type="text/javascript">
 function httpGet(theUrl)
@@ -66,19 +68,30 @@ function httpGet(theUrl)
 </script>
 
 <script>
-    var conv = new showdown.Converter();
-    conv.setOption('tables', true);
-    //conv.setOption('ghCodeBlocks', true);
-    //conv.setFlavor('github');
+    // Actual default values
+    var md = window.markdownit({
+        html: true,
+        highlight: function (str, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+            try {
+                return hljs.highlight(lang, str).value;
+            } catch (__) {
+                console.log("error with language", lang);
+            }
+            }
+
+            return ''; // use external default escaping
+        }
+        });
 
     var txt = document.getElementById('content').innerHTML;
     version = JSON.parse(httpGet('code.json'));
     txt = txt.replace(/@@CODE_DEB@@/g, version.code_deb)
     txt = txt.replace(/@@CODE_URL@@/g, version.code_url)
-    document.getElementById('content').innerHTML = conv.makeHtml(txt);
+    document.getElementById('content').innerHTML = md.render(txt);
 
     txt = httpGet('extensions.md');
-    document.getElementById('md').innerHTML = conv.makeHtml(txt);
+    document.getElementById('md').innerHTML = md.render(txt);
 </script>
 
 </body>
