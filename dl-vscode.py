@@ -300,4 +300,18 @@ def main():
 
 
 if __name__ == '__main__':
+    import platform
+    if platform.system() == "Windows":
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+
+        # https://docs.microsoft.com/en-us/windows/console/setconsolemode
+        STD_OUTPUT_HANDLE = -11
+        ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+
+        mode = ctypes.wintypes.DWORD()
+        if kernel32.GetConsoleMode(kernel32.GetStdHandle(STD_OUTPUT_HANDLE), ctypes.byref(mode)):
+            mode = mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING
+            kernel32.SetConsoleMode(kernel32.GetStdHandle(STD_OUTPUT_HANDLE), mode)
+
     main()
