@@ -1,12 +1,15 @@
+# not need to versioning
 .vscode/
 
+# assets
 GitHub2.css
 showdown.min.js
 images/
+favicon.ico
 
+# downloaded files
 code.json
 extensions.md
-
 code/
 vsix/
 icons/

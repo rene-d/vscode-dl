@@ -256,13 +256,22 @@ def main():
 
     # download assets
     if args.assets:
+        # Showdown JS: Markdown to HTML converter
         # download("https://cdn.rawgit.com/showdownjs/showdown/master/dist/showdown.min.js", "showdown.min.js")
         download("https://cdnjs.cloudflare.com/ajax/libs/showdown/1.8.6/showdown.min.js", "showdown.min.js")
+
+        # Mou/MacDown stylesheet
         download("https://raw.githubusercontent.com/gcollazo/mou-theme-github2/master/GitHub2.css", "GitHub2.css")
+
+        # images from VSCode homepage
         download("https://code.visualstudio.com/assets/images/home-debug.svg", "images/home-debug.svg")
         download("https://code.visualstudio.com/assets/images/home-git.svg", "images/home-git.svg")
         download("https://code.visualstudio.com/assets/images/home-intellisense.svg", "images/home-intellisense.svg")
         download("https://code.visualstudio.com/assets/images/Hundreds-of-Extensions.png", "images/Hundreds-of-Extensions.png")
+
+        # VSCode icon as favicon
+        download("https://github.com/Microsoft/vscode/raw/master/resources/win32/code.ico", "favicon.ico")
+
         exit(0)
 
     # download VSCode
