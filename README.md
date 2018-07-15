@@ -6,7 +6,7 @@ This Python3 script downloads the latest Linux version of [Visual Studio Code](h
 
 The program also creates a catalog in Markdown that can be incorporated into a web page, like `index.html`.
 
-When it is run again, it tries to update extensions and VSCode to their lastest version.
+When it is run again, it tries to update extensions and VSCode to their latest version.
 
 ## Requirements
 
