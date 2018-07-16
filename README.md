@@ -10,7 +10,7 @@ When it is run again, it tries to update extensions and VSCode to their latest v
 
 ## Requirements
 
-* [Python3](https://www.python.org/downloads/) 3.6 or 3.7 (older ones *won't* work)
+* [Python3](https://www.python.org/downloads/) 3.6 or 3.7 (older ones *won't* work because of [f-strings](https://www.python.org/dev/peps/pep-0498))
 * [Requests](http://docs.python-requests.org/en/master/)
 * [PyYAML](https://pyyaml.org)
 
