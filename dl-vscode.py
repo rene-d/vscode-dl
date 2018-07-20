@@ -44,7 +44,7 @@ def download(url, file):
         return False
 
 
-def dl_extensions(extensions):
+def dl_extensions(extensions, json_data):
     """ download or update extensions """
 
     # markdown skeliton
@@ -132,6 +132,9 @@ def dl_extensions(extensions):
             else:
                 print("{:20} {:35} {:10} {}".format(e['publisher']['publisherName'], e['extensionName'], version, check_mark))
 
+            if json_data:
+                json_data['extensions'][key] = {'version': version, 'vsix': vsix}
+
             # download the supplementary files for C/C++ extension
             if key == "ms-vscode.cpptools":
                 # platforms = ['linux', 'win32', 'osx', 'linux32']
@@ -173,7 +176,7 @@ def dl_extensions(extensions):
             print('|'.join(i), file=f)
 
 
-def dl_code():
+def dl_code(json_data):
     """ download code from Microsoft debian-like repo """
 
     repo = "http://packages.microsoft.com/repos/vscode"
@@ -239,8 +242,10 @@ def dl_code():
                 print("{:50} {:20} {} downloading...".format(latest['package'], latest['version'], heavy_ballot_x))
                 download(url, filename)
 
-            with open("code.json", "w") as f:
-                json.dump({'code_url': filename, 'code_deb': deb_filename}, f)
+            if json_data:
+                json_data['code']['version'] = latest['version'].split('-', 1)[0]
+                json_data['code']['url'] = filename
+                json_data['code']['deb'] = deb_filename
 
 
 def main():
@@ -275,8 +280,10 @@ def main():
 
         exit(0)
 
+    json_data = {'code': {}, 'extensions': {}}
+
     # download VSCode
-    dl_code()
+    dl_code(json_data)
     print()
 
     # download extensions
@@ -306,12 +313,15 @@ def main():
 
         extensions = list(installed.union(extensions))
 
-    dl_extensions(extensions)
+    dl_extensions(extensions, json_data)
+
+    with open("code.json", "w") as f:
+        json.dump(json_data, f, indent=4)
 
 
 if __name__ == '__main__':
-    import platform
-    if platform.system() == "Windows":
+    from platform import system as platform_system
+    if platform_system() == "Windows":
         import ctypes
         kernel32 = ctypes.windll.kernel32
 

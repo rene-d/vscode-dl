@@ -16,17 +16,19 @@
 <div id="content">
 # Welcome
 
-Bienvenue sur le mirroir interne de [Visual Studio Code](http://code.visualstudio.com).
+Welcome to the private [Visual Studio Code](http://code.visualstudio.com) mirror. This mirror allows you to install VSCode offline and a curated list of extensions.
 
-## Installation
+## Installing Visual Studio Code @@CODE_VER@@
 
-1. Télécharger le [paquet Debian](@@CODE_URL@@) et taper dans une console :
+1. Download the [Debian package](@@CODE_URL@@) _or_ chdir to the mirror folder and type into a terminal :
 
-    ````
+    ````bash
     $ sudo dpkg -i @@CODE_DEB@@
     ````
 
-2. Désactiver les mises à jour automatiques et la télémétrie dans les [Settings](https://code.visualstudio.com/docs/getstarted/settings) (`Ctrl ,` ou `⌘ ,` pour y accéder):
+    VSCode automatically adds a source.list for APT. You should remove the file `/etc/apt/sources.list.d/vscode.list`.
+
+2. Deactivate updates and telemetry in VSCode [Settings](https://code.visualstudio.com/docs/getstarted/settings) (`Ctrl ,` or `⌘ ,` to edit them):
 
     ````json
     {
@@ -37,17 +39,30 @@ Bienvenue sur le mirroir interne de [Visual Studio Code](http://code.visualstudi
     }
     ````
 
-3. Installer les extensions
-
 <center><img src="images/Hundreds-of-Extensions.png" height="160px"></center>
 
 ## Extensions
 
-Pour installer une extension :
-- télécharger le fichier `.vsix` en cliquant sur le lien de la colonne **Version**
-- taper dans une console la commande : `code --install-extension <fichier>.vsix`
+### Installing an extension
+- download the `.vsix` file by clicking on the link into the **Version** column _or_ go to the mirror `vsix/` subdirectory
+- in a terminal, type : `code --install-extension <file>.vsix`
 
-**ATTENTION** si vous installez l'extension C/C++, vous devez obligatoirement installer l'extension `cpptools-linux` correspondante _après_.
+**CAUTION** The C/C++ extension requires the native companion extension `cpptools-linux` to be installed _after_.
+
+### Updating all installed extensions automatically
+
+[update-extensions.py](update-extensions.py) is a Python3 script that downloads from the mirror and updates the installed extensions ([Requests](http://python-requests.org/) package required).
+
+````bash
+# One-liner (because you're worth it!):
+curl -s @@path_name@@update-extensions.py | python3 - @@path_name@@
+
+# Alternatively, you can run the script into the mirror folder:
+cd /path/to/vscode-mirror
+python3 update-extensions.py
+````
+
+### List of selected extensions
 </div>
 
 <div id="md">
@@ -81,12 +96,19 @@ function httpGet(theUrl)
 
             return ''; // use external default escaping
         }
-        });
+    });
 
     var txt = document.getElementById('content').innerHTML;
     version = JSON.parse(httpGet('code.json'));
-    txt = txt.replace(/@@CODE_DEB@@/g, version.code_deb)
-    txt = txt.replace(/@@CODE_URL@@/g, version.code_url)
+    txt = txt.replace(/@@CODE_DEB@@/g, version.code.deb)
+    txt = txt.replace(/@@CODE_URL@@/g, version.code.url)
+    txt = txt.replace(/@@CODE_VER@@/g, version.code.version)
+
+    var path = document.URL;
+    var path_name = path.substring(0, path.lastIndexOf('/') + 1);
+
+    txt = txt.replace(/@@path_name@@/g, path_name)
+
     document.getElementById('content').innerHTML = md.render(txt);
 
     txt = httpGet('extensions.md');
