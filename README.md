@@ -4,7 +4,7 @@
 
 This Python3 script downloads the latest Linux version of [Visual Studio Code](http://code.visualstudio.com) and some extensions for installation on computers without Internet connection or proxy restrictions.
 
-The program also creates a catalog in Markdown that can be incorporated into a web page, like `index.html`.
+The program also creates a catalog in Markdown that can be incorporated into a web page, like this [example](https://rene-d.github.io/dl-vscode/demo/index.html).
 
 When it is run again, it tries to update extensions and VSCode to their latest version.
 
