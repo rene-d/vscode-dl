@@ -1,0 +1,129 @@
+{
+    "code": {
+        "version": "1.25.1",
+        "url": "code/code_1.25.1-1531323788_amd64.deb",
+        "deb": "code_1.25.1-1531323788_amd64.deb"
+    },
+    "extensions": {
+        "ms-python.python": {
+            "version": "2018.7.0",
+            "vsix": "vsix/ms-python.python-2018.7.0.vsix"
+        },
+        "ms-vscode.cpptools": {
+            "version": "0.17.7",
+            "vsix": "vsix/ms-vscode.cpptools-0.17.7.vsix"
+        },
+        "robertohuertasm.vscode-icons": {
+            "version": "7.24.0",
+            "vsix": "vsix/robertohuertasm.vscode-icons-7.24.0.vsix"
+        },
+        "eamodio.gitlens": {
+            "version": "8.5.2",
+            "vsix": "vsix/eamodio.gitlens-8.5.2.vsix"
+        },
+        "redhat.java": {
+            "version": "0.28.0",
+            "vsix": "vsix/redhat.java-0.28.0.vsix"
+        },
+        "ms-vscode.Go": {
+            "version": "0.6.84",
+            "vsix": "vsix/ms-vscode.Go-0.6.84.vsix"
+        },
+        "PeterJausovec.vscode-docker": {
+            "version": "0.0.27",
+            "vsix": "vsix/PeterJausovec.vscode-docker-0.0.27.vsix"
+        },
+        "formulahendry.code-runner": {
+            "version": "0.9.3",
+            "vsix": "vsix/formulahendry.code-runner-0.9.3.vsix"
+        },
+        "donjayamanne.githistory": {
+            "version": "0.4.2",
+            "vsix": "vsix/donjayamanne.githistory-0.4.2.vsix"
+        },
+        "DavidAnson.vscode-markdownlint": {
+            "version": "0.18.0",
+            "vsix": "vsix/DavidAnson.vscode-markdownlint-0.18.0.vsix"
+        },
+        "DotJoshJohnson.xml": {
+            "version": "2.3.1",
+            "vsix": "vsix/DotJoshJohnson.xml-2.3.1.vsix"
+        },
+        "redhat.vscode-yaml": {
+            "version": "0.0.13",
+            "vsix": "vsix/redhat.vscode-yaml-0.0.13.vsix"
+        },
+        "humao.rest-client": {
+            "version": "0.19.0",
+            "vsix": "vsix/humao.rest-client-0.19.0.vsix"
+        },
+        "vector-of-bool.cmake-tools": {
+            "version": "1.1.0",
+            "vsix": "vsix/vector-of-bool.cmake-tools-1.1.0.vsix"
+        },
+        "justusadam.language-haskell": {
+            "version": "2.5.0",
+            "vsix": "vsix/justusadam.language-haskell-2.5.0.vsix"
+        },
+        "twxs.cmake": {
+            "version": "0.0.17",
+            "vsix": "vsix/twxs.cmake-0.0.17.vsix"
+        },
+        "xyz.plsql-language": {
+            "version": "1.4.1",
+            "vsix": "vsix/xyz.plsql-language-1.4.1.vsix"
+        },
+        "vadimcn.vscode-lldb": {
+            "version": "0.8.9",
+            "vsix": "vsix/vadimcn.vscode-lldb-0.8.9.vsix"
+        },
+        "goessner.mdmath": {
+            "version": "2.2.1",
+            "vsix": "vsix/goessner.mdmath-2.2.1.vsix"
+        },
+        "zxh404.vscode-proto3": {
+            "version": "0.2.1",
+            "vsix": "vsix/zxh404.vscode-proto3-0.2.1.vsix"
+        },
+        "MS-CEINTL.vscode-language-pack-fr": {
+            "version": "1.25.2",
+            "vsix": "vsix/MS-CEINTL.vscode-language-pack-fr-1.25.2.vsix"
+        },
+        "slevesque.vscode-hexdump": {
+            "version": "1.6.0",
+            "vsix": "vsix/slevesque.vscode-hexdump-1.6.0.vsix"
+        },
+        "bierner.markdown-preview-github-styles": {
+            "version": "0.1.2",
+            "vsix": "vsix/bierner.markdown-preview-github-styles-0.1.2.vsix"
+        },
+        "jithurjacob.nbpreviewer": {
+            "version": "1.0.0",
+            "vsix": "vsix/jithurjacob.nbpreviewer-1.0.0.vsix"
+        },
+        "nobuhito.printcode": {
+            "version": "2.3.0",
+            "vsix": "vsix/nobuhito.printcode-2.3.0.vsix"
+        },
+        "qub.qub-xml-vscode": {
+            "version": "1.2.8",
+            "vsix": "vsix/qub.qub-xml-vscode-1.2.8.vsix"
+        },
+        "TomiTurtiainen.rf-intellisense": {
+            "version": "2.0.1",
+            "vsix": "vsix/TomiTurtiainen.rf-intellisense-2.0.1.vsix"
+        },
+        "felixrieseberg.vsc-travis-ci-status": {
+            "version": "1.1.0",
+            "vsix": "vsix/felixrieseberg.vsc-travis-ci-status-1.1.0.vsix"
+        },
+        "keith.robotframework": {
+            "version": "0.2.8",
+            "vsix": "vsix/keith.robotframework-0.2.8.vsix"
+        },
+        "flipphillips.wolfram-language": {
+            "version": "0.1.0",
+            "vsix": "vsix/flipphillips.wolfram-language-0.1.0.vsix"
+        }
+    }
+}
