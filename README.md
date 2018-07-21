@@ -20,7 +20,7 @@ pip3 install -U requests PyYAML
 
 ## Usage
 
-Download Visual Studio Code and extensions listed in `extensions.yaml` ([screenshot](http://rene-d.github.io/dl-vscode/demo/running.md)) :
+Download Visual Studio Code and extensions listed in `extensions.yaml` ([screenshot](http://rene-d.github.io/dl-vscode/demo/screenshot.md)) :
 ````
 python3 dl-vscode.py
 ````
