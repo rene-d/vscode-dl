@@ -1,4 +1,4 @@
-Logo|Nom|Description|Auteur|Version|Date
+Icon|Name|Description|Author|Version|Date
 ----|---|-----------|------|-------|----
 ![Python](https://ms-python.gallerycdn.vsassets.io/extensions/ms-python/python/2018.7.0/1532019295892/Microsoft.VisualStudio.Services.Icons.Small)|[Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)|Linting, Debugging (multi-threaded, remote), Intellisense, code formatting, refactoring, unit tests, snippets, and more.|[Microsoft](https://marketplace.visualstudio.com/publishers/ms-python)|[2018.7.0](vsix/ms-python.python-2018.7.0.vsix)|2018/07/19&nbsp;16:57:47
 ![C/C++](https://ms-vscode.gallerycdn.vsassets.io/extensions/ms-vscode/cpptools/0.17.7/1532036774063/Microsoft.VisualStudio.Services.Icons.Small)|[C/C++](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)|C/C++ IntelliSense, debugging, and code browsing.|[Microsoft](https://marketplace.visualstudio.com/publishers/ms-vscode)|[0.17.7](vsix/ms-vscode.cpptools-0.17.7.vsix)|2018/07/19&nbsp;21:48:52
