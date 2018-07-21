@@ -37,7 +37,7 @@ python3 dl-vscode.py --assets
 
 ## Extensions update tool
 
-On a offline installation, [update-extensions.py](update-extensions.py) downloads and updates the installed extensions (Python3 and [Requests](http://python-requests.org) package required) from the mirror.
+On a offline installation, [update-extensions.py](https://github.com/rene-d/dl-vscode/blob/master/update-extensions.py) downloads and updates the installed extensions (Python3 and [Requests](http://python-requests.org) package required) from the mirror.
 
 ````bash
 # One-liner:
