@@ -49,7 +49,7 @@ def dl_extensions(extensions, json_data):
 
     # markdown skeliton
     md = []
-    md.append(['Logo', 'Nom', 'Description', 'Auteur', 'Version', 'Date'])
+    md.append(['Icon', 'Name', 'Description', 'Author', 'Version', 'Date'])
     md.append(['-' * len(i) for i in md[0]])
 
     # prepare the REST query
@@ -105,7 +105,7 @@ def dl_extensions(extensions, json_data):
             # colonne 2: description
             row.append(e['shortDescription'])
 
-            # colonne 3: auteur
+            # colonne 3: author
             row.append('[{}]({})'.format(
                 e['publisher']['displayName'],
                 'https://marketplace.visualstudio.com/publishers/' + e['publisher']['publisherName']))
