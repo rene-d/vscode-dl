@@ -1,0 +1,3 @@
+Example :
+
+![screenshot](screenshot.png)
