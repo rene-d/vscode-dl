@@ -224,28 +224,30 @@ def dl_code(json_data):
 
         packages.sort(key=lambda x: x['_version'], reverse=True)
 
-        latest = None
-        for p in packages:
-            if p['package'] == 'code':
-                latest = p
-                break
+        for package in ['code', 'code-insiders']:
+            latest = None
+            for p in packages:
+                if p['package'] == package:
+                    latest = p
+                    break
 
-        if latest:
-            filename = latest['filename']
-            url = f"{repo}/{filename}"
-            deb_filename = os.path.basename(filename)
-            filename = os.path.join("code", deb_filename)
+            if latest:
+                filename = latest['filename']
+                url = f"{repo}/{filename}"
+                deb_filename = os.path.basename(filename)
+                filename = os.path.join("code", deb_filename)
 
-            if os.path.exists(filename):
-                print("{:50} {:20} {}".format(latest['package'], latest['version'], check_mark))
-            else:
-                print("{:50} {:20} {} downloading...".format(latest['package'], latest['version'], heavy_ballot_x))
-                download(url, filename)
+                if os.path.exists(filename):
+                    print("{:50} {:20} {}".format(latest['package'], latest['version'], check_mark))
+                else:
+                    print("{:50} {:20} {} downloading...".format(latest['package'], latest['version'], heavy_ballot_x))
+                    download(url, filename)
 
-            if json_data:
-                json_data['code']['version'] = latest['version'].split('-', 1)[0]
-                json_data['code']['url'] = filename
-                json_data['code']['deb'] = deb_filename
+                if json_data:
+                    json_data[package] = {}
+                    json_data[package]['version'] = latest['version'].split('-', 1)[0]
+                    json_data[package]['url'] = filename
+                    json_data[package]['deb'] = deb_filename
 
 
 def main():
