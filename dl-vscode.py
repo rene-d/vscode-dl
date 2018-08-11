@@ -7,17 +7,33 @@ import subprocess
 import re
 import os
 import requests
+import requests_cache
 import datetime
 import email.utils
 import dateutil.parser
 import yaml
 import bz2
 import json
+import logging
 
 
 # be a little more visual like npm ;-)
 check_mark = "\033[32m\N{check mark}\033[0m"            # ✔
 heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"    # ✘
+
+
+# logger options
+if sys.stdout.isatty():
+    logging.addLevelName(logging.DEBUG, "\033[0;32m%s\033[0m" % logging.getLevelName(logging.DEBUG))
+    logging.addLevelName(logging.INFO, "\033[1;33m%s\033[0m" % logging.getLevelName(logging.INFO))
+    logging.addLevelName(logging.WARNING, "\033[1;35m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
+    logging.addLevelName(logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
+
+
+# install a static cache (for developping reasons)
+expire_after = datetime.timedelta(hours=1)
+requests_cache.install_cache('.download_cache', allowable_methods=('GET', 'POST'), expire_after=expire_after)
+requests_cache.core.remove_expired_responses()
 
 
 def my_parsedate(text):
@@ -27,7 +43,8 @@ def my_parsedate(text):
 
 def download(url, file):
     """ download a file and set last modified time """
-    r = requests.get(url, allow_redirects=True)
+    with requests_cache.disabled():
+        r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
         d = os.path.dirname(file)
         if d != "":
@@ -44,131 +61,269 @@ def download(url, file):
         return False
 
 
-def dl_extensions(extensions, json_data):
+# cf. vs/platform/extensionManagement/node/extensionGalleryService.ts
+
+class FilterType:
+    ExtensionId = 4
+    ExtensionName = 7
+    Target = 8
+    ExcludeWithFlags = 12
+
+
+class Flags:
+    IncludeVersions = 0x1
+    IncludeFiles = 0x2
+    IncludeVersionProperties = 0x10
+    IncludeInstallationTargets = 0x40
+    IncludeAssetUri = 0x80
+    IncludeStatistics = 0x100
+    IncludeLatestVersionOnly = 0x200
+    Unpublished = 0x1000
+
+
+def is_engine_valid(engine, extension):
+    """ check if extension version <= engine version """
+    """ Nota: the sematic follows https://semver.org """
+
+    if engine == '*':
+        return True
+    if extension[0] != '^':
+        # if version doesn't begin with ^, I don't know how to handle it
+        return False
+    a = list(map(int, engine.split('.')))
+    b = list(map(int, extension[1:].split('.')))
+    return a >= b
+
+
+def get_extensions(extensions, vscode_engine):
+    """ retrieve from server the extension list with engine version validated """
+
+    # proceed in two times, like VSCode, to reduce bandwidth consumption
+    #    1. get the extension latest versions
+    #    2. check if engine is ok
+    #    3. make a new query for extensions for which engine doesn't fit
+
+    # prepare the first query
+    data = {
+        "filters": [
+            {
+                "criteria": [
+                    {"filterType": FilterType.Target, "value": "Microsoft.VisualStudio.Code"},
+                    {"filterType": FilterType.ExcludeWithFlags, "value": str(Flags.Unpublished)},
+                ],
+            }
+        ],
+        "flags": Flags.IncludeLatestVersionOnly + Flags.IncludeAssetUri + Flags.IncludeVersionProperties
+    }
+    for ext in sorted(extensions):
+        data['filters'][0]['criteria'].append({'filterType': FilterType.ExtensionName, 'value': ext})
+
+    headers = {'Content-type': 'application/json', 'Accept': 'application/json;api-version=3.0-preview.1'}
+
+    # query the gallery
+    logging.info("query IncludeLatestVersionOnly")
+    req = requests.post("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery",
+                        json=data, headers=headers)
+    res = req.json()
+    # with open("query1.json", "w") as f: json.dump(res, f, indent=4)
+
+    # analyze the response
+    not_compatible = []
+    result = []
+
+    if 'results' in res and 'extensions' in res['results'][0]:
+        for e in res['results'][0]['extensions']:
+
+            # print(e['displayName'], e['shortDescription'], e['publisher']['displayName'])
+
+            for v in e['versions']:
+                pass
+                # print("", v['version'])
+                # print(v['assetUri'] + '/Microsoft.VisualStudio.Services.VSIXPackage')
+
+            for p in e['versions'][0]['properties']:
+                if p['key'] == 'Microsoft.VisualStudio.Code.Engine':
+                    # print("", p['key'], p['value'])
+                    if is_engine_valid(vscode_engine, p['value']):
+                        break
+            else:
+                logging.warning("KO: '%s | %s | %s | %s",
+                                e['displayName'], e['shortDescription'],
+                                e['publisher']['displayName'], e['versions'][0]['version'])
+                # we will look for a matching version later
+                not_compatible.append(e['extensionId'])
+                continue
+
+            logging.debug("OK: '%s | %s | %s | %s",
+                          e['displayName'], e['shortDescription'],
+                          e['publisher']['displayName'], e['versions'][0]['version'])
+            result.append(e)
+
+    if len(not_compatible) == 0:
+        # we have all we need
+        return result
+
+    # prepare the second query
+    data = {
+        "filters": [
+            {
+                "criteria": [
+                    {"filterType": FilterType.Target, "value": "Microsoft.VisualStudio.Code"},
+                    {"filterType": FilterType.ExcludeWithFlags, "value": str(Flags.Unpublished)},
+                ],
+            }
+        ],
+        "flags": Flags.IncludeVersions + Flags.IncludeAssetUri + Flags.IncludeVersionProperties
+    }
+    for id in not_compatible:
+        data['filters'][0]['criteria'].append({'filterType': FilterType.ExtensionId, 'value': id})
+
+    # query the gallery
+    logging.info("query IncludeVersions")
+    req = requests.post("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery",
+                        json=data, headers=headers)
+    res = req.json()
+    # with open("query2.json", "w") as f: json.dump(res, f, indent=4)
+
+    if 'results' in res and 'extensions' in res['results'][0]:
+        for e in res['results'][0]['extensions']:
+
+            logging.debug("analyze %s | %s | %s",
+                          e['displayName'], e['shortDescription'], e['publisher']['displayName'])
+
+            # find the greatest version compatible with our vscode engine
+            max_vernum = []
+            max_version = None
+            for v in e['versions']:
+                engine = "?"
+                for p in v['properties']:
+                    if p['key'] == 'Microsoft.VisualStudio.Code.Engine':
+                        engine = p['value']
+                is_valid = is_engine_valid(vscode_engine, engine)
+                logging.debug("found version %s engine %s : %s", v['version'], engine, is_valid)
+                if is_valid:
+                    # well, it seems that versions are sorted oldest last.
+                    # since it's not sure, I prefer finding the greatest version
+                    vernum = list(map(int, v['version'].split('.')))
+                    if vernum > max_vernum:
+                        max_vernum = vernum
+                        max_version = v
+
+            if max_version:
+                logging.debug("version %s is the best suitable choice", max_version['version'])
+                e['versions'] = [max_version]
+            else:
+                logging.error("no suitable version found")
+
+            result.append(e)
+
+    # with open("query3.json", "w") as f: json.dump(result, f, indent=4)
+
+    return result
+
+
+def dl_extensions(extensions, json_data, engine_version="1.25.0"):
     """ download or update extensions """
+
+    response = get_extensions(extensions, engine_version)
 
     # markdown skeliton
     md = []
     md.append(['Icon', 'Name', 'Description', 'Author', 'Version', 'Date'])
     md.append(['-' * len(i) for i in md[0]])
 
-    # prepare the REST query
-    data = {
-        "filters": [
-            {
-                "criteria": [
-                    {"filterType": 8, "value": "Microsoft.VisualStudio.Code"},
-                    {"filterType": 12, "value": "4096"},
-                ],
-            }
-        ],
-        "flags": 0x200 + 0x80       # IncludeLatestVersionOnly IncludeAssetUri
-    }                               # cf. vs/platform/extensionManagement/node/extensionGalleryService.ts
-
-    for ext in extensions:
-        data['filters'][0]['criteria'].append({'filterType': 7, 'value': ext})
-
-    headers = {'Content-type': 'application/json', 'Accept': 'application/json;api-version=3.0-preview.1'}
-
-    # query the gallery
-    req = requests.post("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery",
-                        json=data, headers=headers)
-    res = req.json()
-    # if args.verbose: pprint.pprint(res)
-
     # analyze the response
-    if 'results' in res and 'extensions' in res['results'][0]:
-        for e in res['results'][0]['extensions']:
+    for e in response:
 
-            # print(e['displayName'])
-            # print(e['shortDescription'])
-            # print(e['publisher']['displayName'])
-            # for v in e['versions']:
-            #     print(v['version'])
-            #     print(v['assetUri'] + '/Microsoft.VisualStudio.Services.VSIXPackage')
-            # print()
+        # print(e['displayName'])
+        # print(e['shortDescription'])
+        # print(e['publisher']['displayName'])
+        # for v in e['versions']:
+        #     print(v['version'])
+        #     print(v['assetUri'] + '/Microsoft.VisualStudio.Services.VSIXPackage')
+        # print()
 
-            row = []
+        row = []
 
-            key = e['publisher']['publisherName'] + '.' + e['extensionName']
-            version = e['versions'][0]['version']
-            vsix = 'vsix/' + key + '-' + version + '.vsix'
-            icon = 'icons/' + key + '.png'
+        key = e['publisher']['publisherName'] + '.' + e['extensionName']
+        version = e['versions'][0]['version']
+        vsix = 'vsix/' + key + '-' + version + '.vsix'
+        icon = 'icons/' + key + '.png'
 
-            # colonne 1: icône + nom avec lien
-            row.append("![{}]({})".format(e['displayName'], icon))
+        # colonne 1: icône + nom avec lien
+        row.append("![{}]({})".format(e['displayName'], icon))
 
-            row.append("[{}]({})".format(
-                e['displayName'],
-                'https://marketplace.visualstudio.com/items?itemName=' + key))
+        row.append("[{}]({})".format(
+            e['displayName'],
+            'https://marketplace.visualstudio.com/items?itemName=' + key))
 
-            # colonne 2: description
-            row.append(e['shortDescription'])
+        # colonne 2: description
+        row.append(e['shortDescription'])
 
-            # colonne 3: author
-            row.append('[{}]({})'.format(
-                e['publisher']['displayName'],
-                'https://marketplace.visualstudio.com/publishers/' + e['publisher']['publisherName']))
+        # colonne 3: author
+        row.append('[{}]({})'.format(
+            e['publisher']['displayName'],
+            'https://marketplace.visualstudio.com/publishers/' + e['publisher']['publisherName']))
 
-            # colonne 4: version
-            row.append("[{}]({})".format(e['versions'][0]['version'], vsix))
+        # colonne 4: version
+        row.append("[{}]({})".format(e['versions'][0]['version'], vsix))
 
-            # colonne 5: date de mise à jour
-            d = dateutil.parser.parse(e['versions'][0]['lastUpdated'])
-            row.append(d.strftime("%Y/%m/%d&nbsp;%H:%M:%S"))
+        # colonne 5: date de mise à jour
+        d = dateutil.parser.parse(e['versions'][0]['lastUpdated'])
+        row.append(d.strftime("%Y/%m/%d&nbsp;%H:%M:%S"))
 
-            md.append(row)
+        md.append(row)
 
-            # download the extension
-            if not os.path.exists(vsix):
-                if os.path.exists(icon):
-                    os.unlink(icon)
+        # download the extension
+        if not os.path.exists(vsix):
+            if os.path.exists(icon):
+                os.unlink(icon)
 
-                url = e['versions'][0]['assetUri'] + '/Microsoft.VisualStudio.Services.VSIXPackage'
+            url = e['versions'][0]['assetUri'] + '/Microsoft.VisualStudio.Services.VSIXPackage'
 
-                print("{:20} {:35} {:10} {} downloading...".format(
-                    e['publisher']['publisherName'], e['extensionName'], version, heavy_ballot_x))
-                download(url, vsix)
-            else:
-                print("{:20} {:35} {:10} {}".format(e['publisher']['publisherName'], e['extensionName'], version, check_mark))
+            print("{:20} {:35} {:10} {} downloading...".format(
+                e['publisher']['publisherName'], e['extensionName'], version, heavy_ballot_x))
+            download(url, vsix)
+        else:
+            print("{:20} {:35} {:10} {}".format(e['publisher']['publisherName'], e['extensionName'], version, check_mark))
 
-            if json_data:
-                json_data['extensions'][key] = {'version': version, 'vsix': vsix}
+        if json_data:
+            json_data['extensions'][key] = {'version': version, 'vsix': vsix}
 
-            # download the supplementary files for C/C++ extension
-            if key == "ms-vscode.cpptools":
-                # platforms = ['linux', 'win32', 'osx', 'linux32']
-                platforms = ['linux']
-                for platform in platforms:
-                    url = f"https://github.com/Microsoft/vscode-cpptools/releases/download/v{version}/cpptools-{platform}.vsix"
-                    vsix = f'vsix/{key}-{platform}-{version}.vsix'
-                    if not os.path.exists(vsix):
-                        print("{:20} {:35} {:10} {} downloading...".format("", "cpptools-" + platform, version, heavy_ballot_x))
-                        ok = download(url, vsix)
-                    else:
-                        print("{:20} {:35} {:10} {}".format("", "cpptools-" + platform, version, check_mark))
-                        ok = True
+        # download the supplementary files for C/C++ extension
+        if key == "ms-vscode.cpptools":
+            # platforms = ['linux', 'win32', 'osx', 'linux32']
+            platforms = ['linux']
+            for platform in platforms:
+                url = f"https://github.com/Microsoft/vscode-cpptools/releases/download/v{version}/cpptools-{platform}.vsix"
+                vsix = f'vsix/{key}-{platform}-{version}.vsix'
+                if not os.path.exists(vsix):
+                    print("{:20} {:35} {:10} {} downloading...".format("", "cpptools-" + platform, version, heavy_ballot_x))
+                    ok = download(url, vsix)
+                else:
+                    print("{:20} {:35} {:10} {}".format("", "cpptools-" + platform, version, check_mark))
+                    ok = True
 
-                    if ok:
-                        d = datetime.datetime.fromtimestamp(os.stat(vsix).st_mtime).strftime("%Y/%m/%d&nbsp;%H:%M:%S")
+                if ok:
+                    d = datetime.datetime.fromtimestamp(os.stat(vsix).st_mtime).strftime("%Y/%m/%d&nbsp;%H:%M:%S")
 
-                        row = [f"![{e['displayName']}]({icon})",                             # icon
-                               f"[vscode-cpptools](https://github.com/Microsoft/vscode-cpptools/releases/)",     # name
-                               f"{key}-{platform}",                                             # description
-                               "[Microsoft](https://github.com/Microsoft/vscode-cpptools)",     # author
-                               f"[{version}]({vsix})",                                          # version/download link
-                               f"{d}"]                                                          # date
-                        md.append(row)
+                    row = [f"![{e['displayName']}]({icon})",                             # icon
+                           f"[vscode-cpptools](https://github.com/Microsoft/vscode-cpptools/releases/)",     # name
+                           f"{key}-{platform}",                                             # description
+                           "[Microsoft](https://github.com/Microsoft/vscode-cpptools)",     # author
+                           f"[{version}]({vsix})",                                          # version/download link
+                           f"{d}"]                                                          # date
+                    md.append(row)
 
-            # download icon
-            if not os.path.exists(icon):
-                os.makedirs("icons", exist_ok=True)
-                url = e['versions'][0]['assetUri'] + '/Microsoft.VisualStudio.Services.Icons.Small'
-                ok = download(url, icon)
-                if not ok:
-                    # default icon: { visual studio code }
-                    url = 'https://cdn.vsassets.io/v/20180521T120403/_content/Header/default_icon.png'
-                    download(url, icon)
+        # download icon
+        if not os.path.exists(icon):
+            os.makedirs("icons", exist_ok=True)
+            url = e['versions'][0]['assetUri'] + '/Microsoft.VisualStudio.Services.Icons.Small'
+            ok = download(url, icon)
+            if not ok:
+                # default icon: { visual studio code }
+                url = 'https://cdn.vsassets.io/v/20180521T120403/_content/Header/default_icon.png'
+                download(url, icon)
 
     # write the markdown catalog file
     with open("extensions.md", "w") as f:
@@ -257,9 +412,15 @@ def main():
     parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
     parser.add_argument("-f", "--conf", help="configuration file", default="extensions.yaml")
     parser.add_argument("-i", "--installed", help="scan installed extensions", action='store_true')
+    parser.add_argument("-e", "--engine", help="set the required engine version")
     parser.add_argument("--assets", help="download css and images", action='store_true')
 
     args = parser.parse_args()
+
+    if args.verbose:
+        logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG, datefmt='%H:%M:%S')
+    else:
+        logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.ERROR, datefmt='%H:%M:%S')
 
     # download assets
     if args.assets:
@@ -288,7 +449,7 @@ def main():
     dl_code(json_data)
     print()
 
-    # download extensions
+    # prepare the extension list
     extensions = list()
 
     # get the listed extensions
@@ -315,13 +476,36 @@ def main():
 
         extensions = list(installed.union(extensions))
 
-    dl_extensions(extensions, json_data)
+    # set the engine version (computed value from vscode version...)
+    if args.engine:
+        engine_version = ".".join((args.engine + ".0").split('.')[0:3])
+        logging.info("set vscode engine version: %s", engine_version)
+    else:
+        # # from the installed vscode
+        # s = subprocess.run("code --version 2>/dev/null", shell=True, stdout=subprocess.PIPE).stdout
+        # if s != "":
+        #     ver = s.decode().split('\n')[0]
+        #     logging.debug("installed vscode version: %s", ver)
+        #     engine_version = ".".join(map(str, list(map(int, ver.split('.')))[0:2] + [0]))
+        #     logging.debug("computed vscode engine version: %s", engine_version)
 
+        if 'code' in json_data and 'version' in json_data['code']:
+            engine_version = ".".join(json_data['code']['version'].split('.')[0:2] + ['0'])
+            logging.info("vscode engine version: %s (deduced from version %s)",
+                         engine_version, json_data['code']['version'])
+        else:
+            engine_version = "*"
+
+    # download extensions
+    dl_extensions(extensions, json_data, engine_version)
+
+    # write the JSON data file
     with open("code.json", "w") as f:
         json.dump(json_data, f, indent=4)
 
 
-if __name__ == '__main__':
+def win_term():
+    """ set the Windows console to understand the ANSI color codes """
     from platform import system as platform_system
     if platform_system() == "Windows":
         import ctypes
@@ -336,4 +520,7 @@ if __name__ == '__main__':
             mode = mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING
             kernel32.SetConsoleMode(kernel32.GetStdHandle(STD_OUTPUT_HANDLE), mode)
 
+
+if __name__ == '__main__':
+    win_term()
     main()

@@ -11,11 +11,11 @@ When run again, it tries to update extensions and VSCode to their latest version
 ## Requirements
 
 * [Python3](https://www.python.org/downloads) : version 3.6 or 3.7 (older ones *won't* work because of [f-strings](https://www.python.org/dev/peps/pep-0498))
-* [Requests](http://python-requests.org)
+* [Requests](http://python-requests.org) and [Requests-cache](https://github.com/reclosedev/requests-cache)
 * [PyYAML](https://pyyaml.org)
 
 ````
-pip3 install -U requests PyYAML
+pip3 install -U -r requirements.txt
 ````
 
 ## Usage
