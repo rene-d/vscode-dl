@@ -15,6 +15,9 @@ import yaml
 import bz2
 import json
 import logging
+import pathlib
+from collections import defaultdict
+from operator import itemgetter
 
 
 # be a little more visual like npm ;-)
@@ -28,12 +31,6 @@ if sys.stdout.isatty():
     logging.addLevelName(logging.INFO, "\033[1;33m%s\033[0m" % logging.getLevelName(logging.INFO))
     logging.addLevelName(logging.WARNING, "\033[1;35m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
     logging.addLevelName(logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
-
-
-# install a static cache (for developping reasons)
-expire_after = datetime.timedelta(hours=1)
-requests_cache.install_cache('.download_cache', allowable_methods=('GET', 'POST'), expire_after=expire_after)
-requests_cache.core.remove_expired_responses()
 
 
 def my_parsedate(text):
@@ -405,43 +402,86 @@ def dl_code(json_data):
                     json_data[package]['deb'] = deb_filename
 
 
-def main():
-    """ main function """
+def purge(path, keep, unlink_files=False):
+    """ return the list of files to remove """
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
-    parser.add_argument("-f", "--conf", help="configuration file", default="extensions.yaml")
-    parser.add_argument("-i", "--installed", help="scan installed extensions", action='store_true')
-    parser.add_argument("-e", "--engine", help="set the required engine version")
-    parser.add_argument("--assets", help="download css and images", action='store_true')
-
-    args = parser.parse_args()
-
-    if args.verbose:
-        logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG, datefmt='%H:%M:%S')
+    if re.match('vsix', path):
+        pattern = re.compile(r'^([\w\-]+\.[\w\-]+)\-(\d+\.\d+\.\d+)\.vsix$')
     else:
-        logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.ERROR, datefmt='%H:%M:%S')
+        pattern = re.compile(r'^([\w\-]+)_(\d+\.\d+\.\d+\-\d+)_amd64\.deb$')
 
-    # download assets
-    if args.assets:
-        # markdown-it
-        download("https://cdnjs.cloudflare.com/ajax/libs/markdown-it/8.4.1/markdown-it.min.js", "markdown-it.min.js")
-        download("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js", "highlight.min.js")
-        download("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/vs2015.min.css", "vs2015.min.css")
+    files = defaultdict(lambda: [])
+    for f in pathlib.Path(path).glob('**/*'):
+        g = re.match(pattern, f.name)
+        if not g:
+            logging.warn("not matching RE: %s", f)
+        else:
+            version = list(map(int, re.split('[.-]', g.group(2))))
+            files[g.group(1)].append((f, version))
 
-        # Mou/MacDown GitHub like stylesheet
-        download("https://raw.githubusercontent.com/gcollazo/mou-theme-github2/master/GitHub2.css", "GitHub2.css")
+    unlink = []
+    for k, e in files.items():
+        n = max(keep, 0) + 1
+        for f, v in sorted(e, key=itemgetter(1), reverse=True):
+            if n == 0:
+                # print("UNLINK", k, v)
+                unlink.append(f)
+            else:
+                # print("KEEP  ", k, v)
+                n -= 1
 
-        # images from VSCode homepage
-        download("https://code.visualstudio.com/assets/images/home-debug.svg", "images/home-debug.svg")
-        download("https://code.visualstudio.com/assets/images/home-git.svg", "images/home-git.svg")
-        download("https://code.visualstudio.com/assets/images/home-intellisense.svg", "images/home-intellisense.svg")
-        download("https://code.visualstudio.com/assets/images/Hundreds-of-Extensions.png", "images/Hundreds-of-Extensions.png")
+    if unlink_files:
+        for f in unlink:
+            logging.debug("unlink %s", f)
+            f.unlink()
 
-        # VSCode icon as favicon
-        download("https://github.com/Microsoft/vscode/raw/master/resources/win32/code.ico", "favicon.ico")
+    return unlink
 
-        exit(0)
+
+def download_assets():
+    """ download assets (css, images, javascript) """
+
+    # markdown-it
+    download("https://cdnjs.cloudflare.com/ajax/libs/markdown-it/8.4.1/markdown-it.min.js", "markdown-it.min.js")
+    download("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js", "highlight.min.js")
+    download("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/vs2015.min.css", "vs2015.min.css")
+
+    # Mou/MacDown GitHub like stylesheet
+    download("https://raw.githubusercontent.com/gcollazo/mou-theme-github2/master/GitHub2.css", "GitHub2.css")
+
+    # images from VSCode homepage
+    download("https://code.visualstudio.com/assets/images/home-debug.svg", "images/home-debug.svg")
+    download("https://code.visualstudio.com/assets/images/home-git.svg", "images/home-git.svg")
+    download("https://code.visualstudio.com/assets/images/home-intellisense.svg", "images/home-intellisense.svg")
+    download("https://code.visualstudio.com/assets/images/Hundreds-of-Extensions.png", "images/Hundreds-of-Extensions.png")
+
+    # VSCode icon as favicon
+    download("https://github.com/Microsoft/vscode/raw/master/resources/win32/code.ico", "favicon.ico")
+
+
+def print_conf(args):
+    """ print the configuration as a YAML file """
+
+    s = subprocess.check_output("code --list-extensions", shell=True)
+    installed = set(s.decode().split())
+
+    listed = set()
+    if os.path.exists(args.conf):
+        conf = yaml.load(open(args.conf))
+        if 'extensions' in conf:
+            listed = set(conf['extensions'])
+
+    conf['installed'] = list(installed)
+    conf['not-installed'] = list(listed - installed)
+    conf['not-listed'] = list(installed - listed)
+
+    # sys.stdout.write("\033[1;36m")
+    yaml.dump(conf, stream=sys.stdout, default_flow_style=False)
+    # sys.stdout.write("\033[0m\n")
+
+
+def download_code_vsix(args):
+    """ the real thing here """
 
     json_data = {'code': {}, 'extensions': {}}
 
@@ -460,20 +500,10 @@ def main():
             extensions = list(listed.union(extensions))
         conf = None
 
+    # get installed extensions if asked
     if args.installed:
-        # get installed extensions
         s = subprocess.check_output("code --list-extensions", shell=True)
         installed = set(s.decode().split())
-
-        if args.verbose:
-            conf = yaml.load(open(args.conf))
-            conf['installed'] = list(installed)
-            conf['not-installed'] = list(listed - installed)
-            conf['not-listed'] = list(installed - listed)
-            sys.stdout.write("\033[1;36m")
-            yaml.dump(conf, stream=sys.stdout, default_flow_style=False)
-            sys.stdout.write("\033[0m\n")
-
         extensions = list(installed.union(extensions))
 
     # set the engine version (computed value from vscode version...)
@@ -502,6 +532,53 @@ def main():
     # write the JSON data file
     with open("code.json", "w") as f:
         json.dump(json_data, f, indent=4)
+
+
+def main():
+    """ main function """
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
+    parser.add_argument("-f", "--conf", help="configuration file", default="extensions.yaml")
+    parser.add_argument("-i", "--installed", help="scan installed extensions", action='store_true')
+    parser.add_argument("-e", "--engine", help="set the required engine version")
+    parser.add_argument("-k", "--keep", help="number of old versions to keep", type=int, metavar='N', nargs='?', const=0)
+    parser.add_argument("-Y", "--yaml", help="output a conf file with installed extensions (and exit)", action='store_true')
+    parser.add_argument("--assets", help="download css and images (and exit)", action='store_true')
+    parser.add_argument("--no-cache", help="disable cache", action='store_true')
+    parser.add_argument("--clear-cache", help="clear cache", action='store_true')
+
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG, datefmt='%H:%M:%S')
+    else:
+        logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.ERROR, datefmt='%H:%M:%S')
+
+    if not args.no_cache:
+        # install a static cache (for developping and comfort reasons)
+        expire_after = datetime.timedelta(hours=1)
+        requests_cache.install_cache('download_cache', allowable_methods=('GET', 'POST'), expire_after=expire_after)
+        requests_cache.core.remove_expired_responses()
+
+    if args.clear_cache:
+        requests_cache.clear()
+
+    # action 1: download assets (and do nothing else)
+    if args.assets:
+        download_assets()
+        exit(0)
+
+    # action 2: get a conf file (and do nothing else)
+    if args.yaml:
+        print_conf(args)
+        exit(0)
+
+    # action 3: download code/vsix
+    download_code_vsix(args)
+    if args.keep is not None:
+        purge("code", args.keep, True)
+        purge("vsix", args.keep, True)
 
 
 def win_term():

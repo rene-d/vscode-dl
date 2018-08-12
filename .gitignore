@@ -16,7 +16,7 @@ extensions.md
 code/
 vsix/
 icons/
-.download_cache.sqlite
+download_cache.sqlite
 
 # other folders/files
 __pycache__/
