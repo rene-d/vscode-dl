@@ -34,12 +34,14 @@ if sys.stdout.isatty():
 
 
 def my_parsedate(text):
-    """ parse date from http headers response """
+    """ parse date from http headers response
+    """
     return datetime.datetime(*email.utils.parsedate(text)[:6])
 
 
 def download(url, file):
-    """ download a file and set last modified time """
+    """ download a file and set last modified time
+    """
     with requests_cache.disabled():
         r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
@@ -79,13 +81,15 @@ class Flags:
 
 
 def is_engine_valid(engine, extension):
-    """ check if extension version <= engine version """
-    """ Nota: the sematic follows https://semver.org """
+    """ check if extension version <= engine version
+    Nota: the sematic follows https://semver.org
+    """
 
     if engine == '*':
         return True
     if extension[0] != '^':
         # if version doesn't begin with ^, I don't know how to handle it
+        logging.error("unknown engine version semantic: %s", extension)
         return False
     a = list(map(int, engine.split('.')))
     b = list(map(int, extension[1:].split('.')))
@@ -93,7 +97,8 @@ def is_engine_valid(engine, extension):
 
 
 def get_extensions(extensions, vscode_engine):
-    """ retrieve from server the extension list with engine version validated """
+    """ retrieve from server the extension list with engine version validated
+    """
 
     # proceed in two times, like VSCode, to reduce bandwidth consumption
     #    1. get the extension latest versions
@@ -122,7 +127,6 @@ def get_extensions(extensions, vscode_engine):
     req = requests.post("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery",
                         json=data, headers=headers)
     res = req.json()
-    # with open("query1.json", "w") as f: json.dump(res, f, indent=4)
 
     # analyze the response
     not_compatible = []
@@ -134,9 +138,9 @@ def get_extensions(extensions, vscode_engine):
             # print(e['displayName'], e['shortDescription'], e['publisher']['displayName'])
 
             for v in e['versions']:
-                pass
                 # print("", v['version'])
                 # print(v['assetUri'] + '/Microsoft.VisualStudio.Services.VSIXPackage')
+                pass
 
             for p in e['versions'][0]['properties']:
                 if p['key'] == 'Microsoft.VisualStudio.Code.Engine':
@@ -147,7 +151,7 @@ def get_extensions(extensions, vscode_engine):
                 logging.warning("KO: '%s | %s | %s | %s",
                                 e['displayName'], e['shortDescription'],
                                 e['publisher']['displayName'], e['versions'][0]['version'])
-                # we will look for a matching version later
+                # we will look for a suitable version later
                 not_compatible.append(e['extensionId'])
                 continue
 
@@ -180,7 +184,6 @@ def get_extensions(extensions, vscode_engine):
     req = requests.post("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery",
                         json=data, headers=headers)
     res = req.json()
-    # with open("query2.json", "w") as f: json.dump(res, f, indent=4)
 
     if 'results' in res and 'extensions' in res['results'][0]:
         for e in res['results'][0]['extensions']:
@@ -199,8 +202,8 @@ def get_extensions(extensions, vscode_engine):
                 is_valid = is_engine_valid(vscode_engine, engine)
                 logging.debug("found version %s engine %s : %s", v['version'], engine, is_valid)
                 if is_valid:
-                    # well, it seems that versions are sorted oldest last.
-                    # since it's not sure, I prefer finding the greatest version
+                    # well, it seems that versions are sorted latest first
+                    # since it's not sure, I prefer searching for the greatest version number
                     vernum = list(map(int, v['version'].split('.')))
                     if vernum > max_vernum:
                         max_vernum = vernum
@@ -214,13 +217,12 @@ def get_extensions(extensions, vscode_engine):
 
             result.append(e)
 
-    # with open("query3.json", "w") as f: json.dump(result, f, indent=4)
-
     return result
 
 
 def dl_extensions(extensions, json_data, engine_version="1.25.0"):
-    """ download or update extensions """
+    """ download or update extensions
+    """
 
     response = get_extensions(extensions, engine_version)
 
@@ -247,25 +249,25 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
         vsix = 'vsix/' + key + '-' + version + '.vsix'
         icon = 'icons/' + key + '.png'
 
-        # colonne 1: icône + nom avec lien
+        # column 1: icon
         row.append("![{}]({})".format(e['displayName'], icon))
 
         row.append("[{}]({})".format(
             e['displayName'],
             'https://marketplace.visualstudio.com/items?itemName=' + key))
 
-        # colonne 2: description
+        # column 2: description
         row.append(e['shortDescription'])
 
-        # colonne 3: author
+        # column 3: author
         row.append('[{}]({})'.format(
             e['publisher']['displayName'],
             'https://marketplace.visualstudio.com/publishers/' + e['publisher']['publisherName']))
 
-        # colonne 4: version
+        # column 4: version
         row.append("[{}]({})".format(e['versions'][0]['version'], vsix))
 
-        # colonne 5: date de mise à jour
+        # column 5: last update time
         d = dateutil.parser.parse(e['versions'][0]['lastUpdated'])
         row.append(d.strftime("%Y/%m/%d&nbsp;%H:%M:%S"))
 
@@ -304,7 +306,7 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
                 if ok:
                     d = datetime.datetime.fromtimestamp(os.stat(vsix).st_mtime).strftime("%Y/%m/%d&nbsp;%H:%M:%S")
 
-                    row = [f"![{e['displayName']}]({icon})",                             # icon
+                    row = [f"![{e['displayName']}]({icon})",                                # icon
                            f"[vscode-cpptools](https://github.com/Microsoft/vscode-cpptools/releases/)",     # name
                            f"{key}-{platform}",                                             # description
                            "[Microsoft](https://github.com/Microsoft/vscode-cpptools)",     # author
@@ -329,7 +331,8 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
 
 
 def dl_code(json_data):
-    """ download code from Microsoft debian-like repo """
+    """ download code for Linux from Microsoft debian-like repo
+    """
 
     repo = "http://packages.microsoft.com/repos/vscode"
     url = f"{repo}/dists/stable/main/binary-amd64/Packages.bz2"
@@ -347,9 +350,8 @@ def dl_code(json_data):
                 sect[key] = value
 
                 if key == 'version':
-                    # crée une chaîne qui devrait être l'ordre des numéros de version
-                    sect['_version'] = '|'.join(x.rjust(16, '0') if x.isdigit() else x.ljust(16)
-                                                for x in re.split(r'\W', value))
+                    # set up a list that should be in the same order as version numbers
+                    sect['_version'] = list(map(int, re.split(r'[.-]', value)))
 
                 key = value = None
 
@@ -402,8 +404,10 @@ def dl_code(json_data):
                     json_data[package]['deb'] = deb_filename
 
 
-def purge(path, keep, unlink_files=False):
-    """ return the list of files to remove """
+def purge(path, keep):
+    """ keep only `keep` old versions
+    return the list of files removed
+    """
 
     if re.match('vsix', path):
         pattern = re.compile(r'^([\w\-]+\.[\w\-]+)\-(\d+\.\d+\.\d+)\.vsix$')
@@ -430,16 +434,16 @@ def purge(path, keep, unlink_files=False):
                 # print("KEEP  ", k, v)
                 n -= 1
 
-    if unlink_files:
-        for f in unlink:
-            logging.debug("unlink %s", f)
-            f.unlink()
+    for f in unlink:
+        logging.debug("unlink %s", f)
+        f.unlink()
 
     return unlink
 
 
 def download_assets():
-    """ download assets (css, images, javascript) """
+    """ download assets (css, images, javascript)
+    """
 
     # markdown-it
     download("https://cdnjs.cloudflare.com/ajax/libs/markdown-it/8.4.1/markdown-it.min.js", "markdown-it.min.js")
@@ -460,7 +464,8 @@ def download_assets():
 
 
 def print_conf(args):
-    """ print the configuration as a YAML file """
+    """ print the configuration as a YAML file
+    """
 
     s = subprocess.check_output("code --list-extensions", shell=True)
     installed = set(s.decode().split())
@@ -481,7 +486,8 @@ def print_conf(args):
 
 
 def download_code_vsix(args):
-    """ the real thing here """
+    """ the real thing here
+    """
 
     json_data = {'code': {}, 'extensions': {}}
 
@@ -535,7 +541,8 @@ def download_code_vsix(args):
 
 
 def main():
-    """ main function """
+    """ main function
+    """
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
@@ -545,8 +552,8 @@ def main():
     parser.add_argument("-k", "--keep", help="number of old versions to keep", type=int, metavar='N', nargs='?', const=0)
     parser.add_argument("-Y", "--yaml", help="output a conf file with installed extensions (and exit)", action='store_true')
     parser.add_argument("--assets", help="download css and images (and exit)", action='store_true')
-    parser.add_argument("--no-cache", help="disable cache", action='store_true')
-    parser.add_argument("--clear-cache", help="clear cache", action='store_true')
+    parser.add_argument("--no-cache", help="disable Requests cache", action='store_true')
+    parser.add_argument("--clear-cache", help="clear Requests cache", action='store_true')
 
     args = parser.parse_args()
 
@@ -577,12 +584,13 @@ def main():
     # action 3: download code/vsix
     download_code_vsix(args)
     if args.keep is not None:
-        purge("code", args.keep, True)
-        purge("vsix", args.keep, True)
+        purge("code", args.keep)
+        purge("vsix", args.keep)
 
 
 def win_term():
-    """ set the Windows console to understand the ANSI color codes """
+    """ set the Windows console to understand the ANSI color codes
+    """
     from platform import system as platform_system
     if platform_system() == "Windows":
         import ctypes
