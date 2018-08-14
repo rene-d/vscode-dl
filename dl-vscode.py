@@ -565,7 +565,7 @@ def main():
     if not args.no_cache:
         # install a static cache (for developping and comfort reasons)
         expire_after = datetime.timedelta(hours=1)
-        requests_cache.install_cache('download_cache', allowable_methods=('GET', 'POST'), expire_after=expire_after)
+        requests_cache.install_cache('cache', allowable_methods=('GET', 'POST'), expire_after=expire_after)
         requests_cache.core.remove_expired_responses()
 
     if args.clear_cache:
