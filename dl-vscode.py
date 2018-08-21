@@ -378,7 +378,8 @@ def dl_code(json_data):
 
         packages.sort(key=lambda x: x['_version'], reverse=True)
 
-        for package in ['code', 'code-insiders']:
+        # for package in ['code', 'code-insiders']:
+        for package in ['code']:
             latest = None
             for p in packages:
                 if p['package'] == package:
