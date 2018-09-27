@@ -30,3 +30,6 @@ extensions:
   - redhat.vscode-yaml
   - zxh404.vscode-proto3
   - qub.qub-xml-vscode
+  - vscodevim.vim
+  - James-Yu.latex-workshop
+  - waderyan.gitblame
