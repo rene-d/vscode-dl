@@ -291,16 +291,38 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
 
         # download the supplementary files for C/C++ extension
         if key == "ms-vscode.cpptools":
+
             # platforms = ['linux', 'win32', 'osx', 'linux32']
             platforms = ['linux']
-            for platform in platforms:
-                url = f"https://github.com/Microsoft/vscode-cpptools/releases/download/v{version}/cpptools-{platform}.vsix"
-                vsix = f'vsix/{key}-{platform}-{version}.vsix'
+
+            files = []
+
+            # fetch all releases
+            releases = requests.get("https://api.github.com/repos/Microsoft/vscode-cpptools/releases")
+            if releases.status_code == 200:
+                # request is successfull
+                for release in releases.json():
+                    # find the version matching one
+                    if release['name'] == version:
+                        for asset in release['assets']:
+                            if asset['content_type'] == 'application/vsix' and asset['state'] == 'uploaded':
+
+                                name = re.search(r'^cpptools-(.+)\.vsix$', asset['name'])
+                                if name and name.group(1) in platforms:
+                                    logging.debug("asset %s", asset['browser_download_url'])
+                                    file = {'platform': name.group(1),
+                                            'name': asset['name'],
+                                            'url': asset['browser_download_url']}
+                                    files.append(file)
+
+            for file in files:
+                vsix = f'vsix/{key}-{file["platform"]}-{version}.vsix'
+
                 if not os.path.exists(vsix):
-                    print("{:20} {:35} {:10} {} downloading...".format("", "cpptools-" + platform, version, heavy_ballot_x))
-                    ok = download(url, vsix)
+                    print("{:20} {:35} {:10} {} downloading...".format("", file['name'], version, heavy_ballot_x))
+                    ok = download(file['url'], vsix)
                 else:
-                    print("{:20} {:35} {:10} {}".format("", "cpptools-" + platform, version, check_mark))
+                    print("{:20} {:35} {:10} {}".format("", file['name'], version, check_mark))
                     ok = True
 
                 if ok:
@@ -308,7 +330,7 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
 
                     row = [f"![{e['displayName']}]({icon})",                                # icon
                            f"[vscode-cpptools](https://github.com/Microsoft/vscode-cpptools/releases/)",     # name
-                           f"{key}-{platform}",                                             # description
+                           asset['name'],                                                   # description
                            "[Microsoft](https://github.com/Microsoft/vscode-cpptools)",     # author
                            f"[{version}]({vsix})",                                          # version/download link
                            f"{d}"]                                                          # date
