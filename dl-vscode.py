@@ -274,23 +274,28 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
         md.append(row)
 
         # download the extension
-        if not os.path.exists(vsix):
-            if os.path.exists(icon):
-                os.unlink(icon)
+        if key != "ms-vscode.cpptools":
+            # cpptools is a special case since it is host dependent
+            # the downloadable vsix on the marketplace is a stub to automatically
+            # fetch the full one for the running platform from github releases
 
-            url = e['versions'][0]['assetUri'] + '/Microsoft.VisualStudio.Services.VSIXPackage'
+            if not os.path.exists(vsix):
+                if os.path.exists(icon):
+                    os.unlink(icon)
 
-            print("{:20} {:35} {:10} {} downloading...".format(
-                e['publisher']['publisherName'], e['extensionName'], version, heavy_ballot_x))
-            download(url, vsix)
+                url = e['versions'][0]['assetUri'] + '/Microsoft.VisualStudio.Services.VSIXPackage'
+
+                print("{:20} {:35} {:10} {} downloading...".format(
+                    e['publisher']['publisherName'], e['extensionName'], version, heavy_ballot_x))
+                download(url, vsix)
+            else:
+                print("{:20} {:35} {:10} {}".format(e['publisher']['publisherName'], e['extensionName'], version, check_mark))
+
+            if json_data:
+                json_data['extensions'][key] = {'version': version, 'vsix': vsix}
+
         else:
-            print("{:20} {:35} {:10} {}".format(e['publisher']['publisherName'], e['extensionName'], version, check_mark))
-
-        if json_data:
-            json_data['extensions'][key] = {'version': version, 'vsix': vsix}
-
-        # download the supplementary files for C/C++ extension
-        if key == "ms-vscode.cpptools":
+            # download the full C/C++ extension
 
             # platforms = ['linux', 'win32', 'osx', 'linux32']
             platforms = ['linux']
@@ -319,10 +324,11 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
                 vsix = f'vsix/{key}-{file["platform"]}-{version}.vsix'
 
                 if not os.path.exists(vsix):
-                    print("{:20} {:35} {:10} {} downloading...".format("", file['name'], version, heavy_ballot_x))
+                    print("{:20} {:35} {:10} {} downloading...".format(e['publisher']['publisherName'],
+                                                                       file['name'], version, heavy_ballot_x))
                     ok = download(file['url'], vsix)
                 else:
-                    print("{:20} {:35} {:10} {}".format("", file['name'], version, check_mark))
+                    print("{:20} {:35} {:10} {}".format(e['publisher']['publisherName'], file['name'], version, check_mark))
                     ok = True
 
                 if ok:

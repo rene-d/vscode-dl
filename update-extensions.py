@@ -70,6 +70,12 @@ def update_extensions(url, dry_run=False):
             else:
                 vsix = extensions[key]['vsix']
 
+                if key == "ms-vscode.cpptools":
+                    key2 = "ms-vscode.cpptools-linux"
+                    vsix = vsix.replace(key, key2)
+
+                print(url, key, key2, vsix)
+
                 if not dry_run and url:
                     vsix = download_vsix(url, vsix)
 
@@ -82,28 +88,6 @@ def update_extensions(url, dry_run=False):
                 else:
                     s = subprocess.check_output(cmd, shell=True)
                     print(s.decode())
-
-                if key == "ms-vscode.cpptools":
-                    key2 = "ms-vscode.cpptools-linux"
-
-                    vsix = extensions[key]['vsix']
-                    vsix = vsix.replace(key, key2)
-
-                    if not dry_run and url:
-                        vsix = download_vsix(url, vsix)
-
-                    colorized_key2 = COLOR_LIGHT_CYAN + key2 + COLOR_END
-
-                    print("installing companion extension: {} ({}) {}".format(
-                        colorized_key2, extensions[key]['version'], hot_beverage))
-
-                    if dry_run:
-                        cmd = "code --install-extension '{}'".format(vsix)
-                        if dry_run:
-                            print(COLOR_GREEN + cmd + COLOR_END)
-                        else:
-                            s = subprocess.check_output(cmd, shell=True)
-                            print(s.decode())
 
         except Exception as e:
             print("error for {}: {}{}{}".format(i, COLOR_RED, e, COLOR_END))
