@@ -342,10 +342,6 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
                            f"{d}"]                                                          # date
                     md.append(row)
 
-                    if json_data:
-                        key2 = f'{key}-{file["platform"]}'
-                        json_data['extensions'][key2] = {'version': version, 'vsix': vsix}
-
         # download icon
         if not os.path.exists(icon):
             os.makedirs("icons", exist_ok=True)
