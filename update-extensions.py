@@ -7,6 +7,7 @@ import json
 import requests
 import os
 import tempfile
+import platform
 
 
 check_mark = "\033[32m\N{heavy check mark}\033[0m"      # ✔
@@ -33,7 +34,7 @@ def download_vsix(url, vsix):
         r.raise_for_status()
 
 
-def update_extensions(url, dry_run=False):
+def update_extensions(url, dry_run=False, platform=None):
 
     # load database
     try:
@@ -59,6 +60,9 @@ def update_extensions(url, dry_run=False):
         try:
             key, version = i.split('@', 1)
 
+            if key == "ms-vscode.cpptools" and platform is not None:
+                key = f"ms-vscode.cpptools-{platform}"
+
             colorized_key = COLOR_LIGHT_CYAN + key + COLOR_END
 
             if key not in extensions:
@@ -69,12 +73,6 @@ def update_extensions(url, dry_run=False):
 
             else:
                 vsix = extensions[key]['vsix']
-
-                if key == "ms-vscode.cpptools":
-                    key2 = "ms-vscode.cpptools-linux"
-                    vsix = vsix.replace(key, key2)
-
-                print(url, key, key2, vsix)
 
                 if not dry_run and url:
                     vsix = download_vsix(url, vsix)
@@ -97,13 +95,32 @@ def main():
     """ main function """
 
     parser = argparse.ArgumentParser()
-    # parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
+    parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
     parser.add_argument("-n", "--dry-run", help="scan installed extensions", action='store_true')
+    parser.add_argument("-p", "--platform", help="override platform detection", choices=['linux', 'win32', 'osx', 'linux32'])
     parser.add_argument("url", help="mirror's url", nargs='?')
 
     args = parser.parse_args()
 
-    update_extensions(args.url, args.dry_run)
+    if args.platform is None:
+        if args.verbose:
+            print(platform.uname())
+        if platform.system() == "Darwin":
+            args.platform = 'osx'
+        elif platform.system() == "Windows":
+            args.platform = 'win32'
+        elif platform.system() == "Linux":
+            if platform.uname().machine in ['i686', 'i386']:
+                args.platform = 'linux32'
+            elif platform.uname().machine in ['amd64', 'x86_64']:
+                args.platform = 'linux'
+    if args.platform is None:
+        parser.error('Could not detect a supported platform')
+
+    if args.verbose:
+        print(args)
+
+    update_extensions(args.url, args.dry_run, args.platform)
 
 
 if __name__ == '__main__':
