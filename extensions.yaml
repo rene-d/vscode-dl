@@ -1,3 +1,4 @@
+# <publisherName>.<extensionName>
 extensions:
 - DavidAnson.vscode-markdownlint
 - DotJoshJohnson.xml

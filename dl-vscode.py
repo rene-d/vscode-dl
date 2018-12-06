@@ -89,7 +89,7 @@ def is_engine_valid(engine, extension):
         return True
     if extension[0] != '^':
         # if version doesn't begin with ^, I don't know how to handle it
-        logging.error("unknown engine version semantic: %s", extension)
+        logging.error("unknown engine version semantic: %s (current: %s)", extension, engine)
         return False
     a = list(map(int, engine.split('.')))
     b = list(map(int, extension[1:].split('.')))
@@ -195,19 +195,20 @@ def get_extensions(extensions, vscode_engine):
             max_vernum = []
             max_version = None
             for v in e['versions']:
-                engine = "?"
+                engine = None
                 for p in v['properties']:
                     if p['key'] == 'Microsoft.VisualStudio.Code.Engine':
                         engine = p['value']
-                is_valid = is_engine_valid(vscode_engine, engine)
-                logging.debug("found version %s engine %s : %s", v['version'], engine, is_valid)
-                if is_valid:
-                    # well, it seems that versions are sorted latest first
-                    # since it's not sure, I prefer searching for the greatest version number
-                    vernum = list(map(int, v['version'].split('.')))
-                    if vernum > max_vernum:
-                        max_vernum = vernum
-                        max_version = v
+                if engine:
+                    is_valid = is_engine_valid(vscode_engine, engine)
+                    logging.debug("found version %s engine %s : %s", v['version'], engine, is_valid)
+                    if is_valid:
+                        # well, it seems that versions are sorted latest first
+                        # since it's not sure, I prefer searching for the greatest version number
+                        vernum = list(map(int, v['version'].split('.')))
+                        if vernum > max_vernum:
+                            max_vernum = vernum
+                            max_version = v
 
             if max_version:
                 logging.debug("version %s is the best suitable choice", max_version['version'])
@@ -560,6 +561,8 @@ def download_code_vsix(args):
 
         if 'code' in json_data and 'version' in json_data['code']:
             engine_version = ".".join(json_data['code']['version'].split('.')[0:2] + ['0'])
+            if engine_version == "1.29.0":
+                enfine_version = "1.29.1"
             logging.info("vscode engine version: %s (deduced from version %s)",
                          engine_version, json_data['code']['version'])
         else:
