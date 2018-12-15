@@ -61,7 +61,7 @@ def update_extensions(url, dry_run=False, platform=None):
             key, version = i.split('@', 1)
 
             if key == "ms-vscode.cpptools" and platform is not None:
-                key = f"ms-vscode.cpptools-{platform}"
+                key = "ms-vscode.cpptools-" + platform
 
             colorized_key = COLOR_LIGHT_CYAN + key + COLOR_END
 
