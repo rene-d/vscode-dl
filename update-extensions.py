@@ -120,6 +120,8 @@ def main():
     if args.verbose:
         print(args)
 
+    os.chdir(os.path.dirname(__file__))
+
     update_extensions(args.url, args.dry_run, args.platform)
 
 

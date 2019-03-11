@@ -53,7 +53,10 @@ def download(url, file):
         if r.headers.get('last-modified'):
             d = my_parsedate(r.headers['last-modified'])
             ts = d.timestamp()
-            os.utime(file, (ts, ts))
+            try:
+                os.utime(file, (ts, ts))
+            except OSError:
+                pass
         return True
     else:
         print(heavy_ballot_x, r.status_code, url)
@@ -562,7 +565,7 @@ def download_code_vsix(args):
         if 'code' in json_data and 'version' in json_data['code']:
             engine_version = ".".join(json_data['code']['version'].split('.')[0:2] + ['0'])
             if engine_version == "1.29.0":
-                enfine_version = "1.29.1"
+                engine_version = "1.29.1"
             logging.info("vscode engine version: %s (deduced from version %s)",
                          engine_version, json_data['code']['version'])
         else:
