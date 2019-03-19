@@ -509,7 +509,7 @@ def print_conf(args):
 
     listed = set()
     if os.path.exists(args.conf):
-        conf = yaml.load(open(args.conf))
+        conf = yaml.load(open(args.conf), Loader=yaml.BaseLoader)
         if 'extensions' in conf:
             listed = set(conf['extensions'])
 
@@ -537,7 +537,7 @@ def download_code_vsix(args):
 
     # get the listed extensions
     if os.path.exists(args.conf):
-        conf = yaml.load(open(args.conf))
+        conf = yaml.load(open(args.conf), Loader=yaml.BaseLoader)
         if 'extensions' in conf:
             listed = set(conf['extensions'])
             extensions = list(listed.union(extensions))
@@ -585,14 +585,14 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
-    parser.add_argument("-f", "--conf", help="configuration file", default="extensions.yaml")
+    parser.add_argument("-c", "--conf", help="configuration file", default="extensions.yaml")
     parser.add_argument("-i", "--installed", help="scan installed extensions", action='store_true')
     parser.add_argument("-e", "--engine", help="set the required engine version")
     parser.add_argument("-k", "--keep", help="number of old versions to keep", type=int, metavar='N', nargs='?', const=0)
     parser.add_argument("-Y", "--yaml", help="output a conf file with installed extensions (and exit)", action='store_true')
     parser.add_argument("--assets", help="download css and images (and exit)", action='store_true')
     parser.add_argument("--no-cache", help="disable Requests cache", action='store_true')
-    parser.add_argument("--clear-cache", help="clear Requests cache", action='store_true')
+    parser.add_argument("-f", "--clear-cache", help="clear Requests cache", action='store_true')
 
     args = parser.parse_args()
 
