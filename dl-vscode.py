@@ -437,6 +437,7 @@ def dl_code(json_data):
                 if json_data:
                     json_data[package] = {}
                     json_data[package]['version'] = latest['version'].split('-', 1)[0]
+                    json_data[package]['tag'] = latest['version']
                     json_data[package]['url'] = filename
                     json_data[package]['deb'] = deb_filename
 
