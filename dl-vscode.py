@@ -138,16 +138,11 @@ def get_extensions(extensions, vscode_engine):
     if 'results' in res and 'extensions' in res['results'][0]:
         for e in res['results'][0]['extensions']:
 
-            # print(e['displayName'], e['shortDescription'], e['publisher']['displayName'])
-
             for v in e['versions']:
-                # print("", v['version'])
-                # print(v['assetUri'] + '/Microsoft.VisualStudio.Services.VSIXPackage')
                 pass
 
             for p in e['versions'][0]['properties']:
                 if p['key'] == 'Microsoft.VisualStudio.Code.Engine':
-                    # print("", p['key'], p['value'])
                     if is_engine_valid(vscode_engine, p['value']):
                         break
             else:
@@ -589,7 +584,7 @@ def main():
     parser.add_argument("-c", "--conf", help="configuration file", default="extensions.yaml")
     parser.add_argument("-i", "--installed", help="scan installed extensions", action='store_true')
     parser.add_argument("-e", "--engine", help="set the required engine version")
-    parser.add_argument("-k", "--keep", help="number of old versions to keep", type=int, metavar='N', nargs='?', const=0)
+    parser.add_argument("-k", "--keep", help="number of old versions to keep", type=int, metavar='N', nargs='?', const=10)
     parser.add_argument("-Y", "--yaml", help="output a conf file with installed extensions (and exit)", action='store_true')
     parser.add_argument("--assets", help="download css and images (and exit)", action='store_true')
     parser.add_argument("--no-cache", help="disable Requests cache", action='store_true')
@@ -599,6 +594,7 @@ def main():
 
     if args.verbose:
         logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG, datefmt='%H:%M:%S')
+        logging.debug("args {}".format(args))
     else:
         logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.ERROR, datefmt='%H:%M:%S')
 
@@ -626,6 +622,9 @@ def main():
     if args.keep is not None:
         purge("code", args.keep)
         purge("vsix", args.keep)
+    else:
+        purge("code", 0)
+        purge("vsix", 0)
 
 
 def win_term():
