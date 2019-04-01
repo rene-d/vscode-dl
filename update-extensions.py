@@ -10,9 +10,9 @@ import tempfile
 import platform
 
 
-check_mark = "\033[32m\N{heavy check mark}\033[0m"      # ✔
-heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"    # ✘
-hot_beverage = "\033[1;33m\N{hot beverage}\033[0m"      # ♨
+check_mark = "\033[32m\N{heavy check mark}\033[0m"  # ✔
+heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
+hot_beverage = "\033[1;33m\N{hot beverage}\033[0m"  # ♨
 
 COLOR_RED = "\033[0;31m"
 COLOR_GREEN = "\033[0;32m"
@@ -40,11 +40,11 @@ def update_extensions(url, dry_run=False, platform=None):
     try:
         if url is None:
             with open("code.json", "r") as f:
-                extensions = json.load(f)['extensions']
+                extensions = json.load(f)["extensions"]
         else:
             r = requests.get(url + "/code.json")
             if r.status_code == 200:
-                extensions = r.json()['extensions']
+                extensions = r.json()["extensions"]
             else:
                 r.raise_for_status()
     except Exception as e:
@@ -58,7 +58,7 @@ def update_extensions(url, dry_run=False, platform=None):
     # do update
     for i in installed:
         try:
-            key, version = i.split('@', 1)
+            key, version = i.split("@", 1)
 
             if key == "ms-vscode.cpptools" and platform is not None:
                 key = "ms-vscode.cpptools-" + platform
@@ -68,17 +68,20 @@ def update_extensions(url, dry_run=False, platform=None):
             if key not in extensions:
                 print("extension not found: {} {}".format(colorized_key, heavy_ballot_x))
 
-            elif extensions[key]['version'] == version:
+            elif extensions[key]["version"] == version:
                 print("extension up to date: {} ({}) {}".format(colorized_key, version, check_mark))
 
             else:
-                vsix = extensions[key]['vsix']
+                vsix = extensions[key]["vsix"]
 
                 if not dry_run and url:
                     vsix = download_vsix(url, vsix)
 
-                print("updating: {} from version {} to version {} {}".format(
-                    colorized_key, version, extensions[key]['version'], hot_beverage))
+                print(
+                    "updating: {} from version {} to version {} {}".format(
+                        colorized_key, version, extensions[key]["version"], hot_beverage
+                    )
+                )
                 cmd = "code --install-extension '{}'".format(vsix)
 
                 if dry_run:
@@ -95,10 +98,10 @@ def main():
     """ main function """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", help="increase verbosity", action='store_true')
-    parser.add_argument("-n", "--dry-run", help="scan installed extensions", action='store_true')
-    parser.add_argument("-p", "--platform", help="override platform detection", choices=['linux', 'win32', 'osx', 'linux32'])
-    parser.add_argument("url", help="mirror's url", nargs='?')
+    parser.add_argument("-v", "--verbose", help="increase verbosity", action="store_true")
+    parser.add_argument("-n", "--dry-run", help="scan installed extensions", action="store_true")
+    parser.add_argument("-p", "--platform", help="override platform detection", choices=["linux", "win32", "osx", "linux32"])
+    parser.add_argument("url", help="mirror's url", nargs="?")
 
     args = parser.parse_args()
 
@@ -106,16 +109,16 @@ def main():
         if args.verbose:
             print(platform.uname())
         if platform.system() == "Darwin":
-            args.platform = 'osx'
+            args.platform = "osx"
         elif platform.system() == "Windows":
-            args.platform = 'win32'
+            args.platform = "win32"
         elif platform.system() == "Linux":
-            if platform.uname().machine in ['i686', 'i386']:
-                args.platform = 'linux32'
-            elif platform.uname().machine in ['amd64', 'x86_64']:
-                args.platform = 'linux'
+            if platform.uname().machine in ["i686", "i386"]:
+                args.platform = "linux32"
+            elif platform.uname().machine in ["amd64", "x86_64"]:
+                args.platform = "linux"
     if args.platform is None:
-        parser.error('Could not detect a supported platform')
+        parser.error("Could not detect a supported platform")
 
     if args.verbose:
         print(args)
@@ -125,10 +128,12 @@ def main():
     update_extensions(args.url, args.dry_run, args.platform)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from platform import system as platform_system
+
     if platform_system() == "Windows":
         import ctypes
+
         kernel32 = ctypes.windll.kernel32
 
         # https://docs.microsoft.com/en-us/windows/console/setconsolemode
