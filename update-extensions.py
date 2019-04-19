@@ -2,13 +2,13 @@
 # rene-d 2018
 
 import argparse
-import subprocess
 import json
-import requests
 import os
-import tempfile
 import platform
+import subprocess
+import tempfile
 
+import requests
 
 check_mark = "\033[32m\N{heavy check mark}\033[0m"  # ✔
 heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"  # ✘

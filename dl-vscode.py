@@ -1,24 +1,24 @@
 #! /usr/bin/env python3
 # rene-d 2018
 
-import sys
 import argparse
-import subprocess
-import re
-import os
-import requests
-import requests_cache
+import bz2
 import datetime
 import email.utils
-import dateutil.parser
-import yaml
-import bz2
 import json
 import logging
+import os
 import pathlib
+import re
+import subprocess
+import sys
 from collections import defaultdict
 from operator import itemgetter
 
+import dateutil.parser
+import requests
+import requests_cache
+import yaml
 
 # be a little more visual like npm ;-)
 check_mark = "\033[32m\N{check mark}\033[0m"  # ✔
