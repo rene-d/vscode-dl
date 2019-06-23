@@ -48,3 +48,4 @@ extensions:
 - GrapeCity.gc-excelviewer
 - freebroccolo.reasonml
 - mechatroner.rainbow-csv
+- ms-azuretools.vscode-docker
