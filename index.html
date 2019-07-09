@@ -16,28 +16,30 @@
 <div id="content">
 # Welcome
 
-Welcome to the private [Visual Studio Code](http://code.visualstudio.com) mirror. This mirror allows you to install VSCode offline and a curated list of extensions.
+Welcome to the private [Visual Studio Code](http://code.visualstudio.com) mirror.
+
+This mirror allows you to install Visual Studio Code and a curated list of extensions _offline_.
 
 ## Installing Visual Studio Code @@CODE_VER@@
 
 1. Download the [Debian package](@@CODE_URL@@) _or_ chdir to the mirror folder and type into a terminal :
 
-    ````bash
+    ```bash
     $ sudo dpkg -i @@CODE_DEB@@
-    ````
+    ```
 
     VSCode automatically adds a source.list for APT. You should remove the file `/etc/apt/sources.list.d/vscode.list`.
 
 2. Deactivate updates and telemetry in VSCode [Settings](https://code.visualstudio.com/docs/getstarted/settings) (`Ctrl ,` or `⌘ ,` to edit them):
 
-    ````json
+    ```json
     {
         "update.channel": "none",
         "telemetry.enableTelemetry": false,
         "telemetry.enableCrashReporter": false,
         "extensions.autoUpdate": false
     }
-    ````
+    ```
 
 <center><img src="images/Hundreds-of-Extensions.png" height="160px"></center>
 
@@ -51,14 +53,14 @@ Welcome to the private [Visual Studio Code](http://code.visualstudio.com) mirror
 
 [update-extensions.py](update-extensions.py) is a Python3 script that downloads from the mirror and updates the installed extensions ([Requests](http://python-requests.org/) package required).
 
-````bash
+```bash
 # One-liner (because you're worth it!):
 curl -s @@path_name@@update-extensions.py | python3 - @@path_name@@
 
 # Alternatively, you can run the script into the mirror folder:
 cd /path/to/vscode-mirror
 python3 update-extensions.py
-````
+```
 
 ### List of selected extensions
 </div>
