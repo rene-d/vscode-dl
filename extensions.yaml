@@ -1,3 +1,7 @@
+# configuration file for dl-vscode.py
+#
+web_root: web
+
 # <publisherName>.<extensionName>
 extensions:
 - DavidAnson.vscode-markdownlint

@@ -19,6 +19,8 @@ import dateutil.parser
 import requests
 import requests_cache
 import yaml
+import shutil
+
 
 # be a little more visual like npm ;-)
 check_mark = "\033[32m\N{check mark}\033[0m"  # ✔
@@ -491,9 +493,19 @@ def purge(path, keep):
     return unlink
 
 
-def download_assets():
+def download_assets(destination):
     """ download assets (css, images, javascript)
     """
+
+    src_dir = pathlib.Path(__file__).parent
+    dst_dir = pathlib.Path(destination)
+
+    logging.info("copy assets into %s", dst_dir)
+
+    if src_dir != dst_dir:
+        shutil.copy2(src_dir / "index.html", dst_dir)
+
+    os.chdir(dst_dir)
 
     # markdown-it
     download("https://cdnjs.cloudflare.com/ajax/libs/markdown-it/8.4.1/markdown-it.min.js", "markdown-it.min.js")
@@ -536,7 +548,7 @@ def print_conf(args):
 
 
 def download_code_vsix(args):
-    """ the real thing here
+    """ the real thing is here
     """
 
     json_data = {"code": {}, "extensions": {}}
@@ -591,6 +603,19 @@ def download_code_vsix(args):
         json.dump(json_data, f, indent=4)
 
 
+def server(web_root, port):
+    """ run the HTTP server
+    """
+
+    import http.server
+    from functools import partial
+
+    logging.info("running HTTP server for %s port %d", web_root, port)
+
+    handler_class = partial(http.server.SimpleHTTPRequestHandler, directory=web_root)
+    http.server.test(HandlerClass=handler_class, port=port)
+
+
 def main():
     """ main function
     """
@@ -603,8 +628,10 @@ def main():
     parser.add_argument("-k", "--keep", help="number of old versions to keep", type=int, metavar="N", nargs="?", const=10)
     parser.add_argument("-Y", "--yaml", help="output a conf file with installed extensions (and exit)", action="store_true")
     parser.add_argument("--assets", help="download css and images (and exit)", action="store_true")
-    parser.add_argument("--no-cache", help="disable Requests cache", action="store_true")
-    parser.add_argument("-f", "--clear-cache", help="clear Requests cache", action="store_true")
+    parser.add_argument("--cache", help="enable Requests cache", action="store_true")
+    parser.add_argument("-r", "--root", help="set the root directory")
+    parser.add_argument("-s", "--serve", help="HTTP server", action="store_true")
+    parser.add_argument("-p", "--port", help="HTTP port", type=int, default=8000)
 
     args = parser.parse_args()
 
@@ -612,28 +639,41 @@ def main():
         logging.basicConfig(format="%(asctime)s:%(levelname)s:%(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
         logging.debug("args {}".format(args))
     else:
-        logging.basicConfig(format="%(asctime)s:%(levelname)s:%(message)s", level=logging.ERROR, datefmt="%H:%M:%S")
+        logging.basicConfig(format="%(asctime)s:%(levelname)s:%(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
-    if not args.no_cache:
+    if args.cache:
         # install a static cache (for developping and comfort reasons)
         expire_after = datetime.timedelta(hours=1)
         requests_cache.install_cache("cache", allowable_methods=("GET", "POST"), expire_after=expire_after)
         requests_cache.core.remove_expired_responses()
 
-    if args.clear_cache:
-        requests_cache.clear()
+    if args.root is None:
+        try:
+            args.root = yaml.load(open(args.conf), Loader=yaml.BaseLoader)["web_root"]
+        except Exception:
+            args.root = "web"  # default directory
+
+    args.conf = os.path.abspath(args.conf)
+    args.root = os.path.abspath(args.root)
+
+    if os.path.isdir(args.root) is False:
+        logging.error("directory does not exist: %s", args.root)
+        exit(2)
+
+    # action 0: run http server
+    if args.serve:
+        return server(args.root, args.port)
 
     # action 1: download assets (and do nothing else)
     if args.assets:
-        download_assets()
-        exit(0)
+        return download_assets(args.root)
 
     # action 2: get a conf file (and do nothing else)
     if args.yaml:
-        print_conf(args)
-        exit(0)
+        return print_conf(args)
 
     # action 3: download code/vsix
+    os.chdir(args.root)
     download_code_vsix(args)
     if args.keep is not None:
         purge("code", args.keep)
