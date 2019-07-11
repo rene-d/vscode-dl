@@ -630,7 +630,7 @@ def main():
     parser.add_argument("--assets", help="download css and images (and exit)", action="store_true")
     parser.add_argument("--cache", help="enable Requests cache", action="store_true")
     parser.add_argument("-r", "--root", help="set the root directory")
-    parser.add_argument("-s", "--serve", help="HTTP server", action="store_true")
+    parser.add_argument("-s", "--server", help="HTTP server", action="store_true")
     parser.add_argument("-p", "--port", help="HTTP port", type=int, default=8000)
 
     args = parser.parse_args()
@@ -661,7 +661,7 @@ def main():
         exit(2)
 
     # action 0: run http server
-    if args.serve:
+    if args.server:
         return server(args.root, args.port)
 
     # action 1: download assets (and do nothing else)
