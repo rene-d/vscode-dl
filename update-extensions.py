@@ -7,8 +7,9 @@ import os
 import platform
 import subprocess
 import tempfile
-
+import shutil
 import requests
+
 
 check_mark = "\033[32m\N{heavy check mark}\033[0m"  # ✔
 heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
@@ -23,10 +24,10 @@ temporary_files = []
 
 
 def download_vsix(url, vsix):
-    r = requests.get(url + "/" + vsix)
+    r = requests.get(url + "/" + vsix, stream=True, allow_redirects=True)
     if r.status_code == 200:
         fp = tempfile.NamedTemporaryFile(suffix="_" + os.path.basename(vsix))
-        fp.file.write(r.content)
+        shutil.copyfileobj(r.raw, fp.file)
         fp.file.close()
         temporary_files.append(fp)
         return fp.name

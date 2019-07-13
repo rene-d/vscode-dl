@@ -45,24 +45,24 @@ def download(url, file):
     """ download a file and set last modified time
     """
     with requests_cache.disabled():
-        r = requests.get(url, allow_redirects=True)
-    if r.status_code == 200:
-        d = os.path.dirname(file)
-        if d != "":
-            os.makedirs(d, exist_ok=True)
-        with open(file, "wb") as f:
-            f.write(r.content)
-        if r.headers.get("last-modified"):
-            d = my_parsedate(r.headers["last-modified"])
-            ts = d.timestamp()
-            try:
-                os.utime(file, (ts, ts))
-            except OSError:
-                pass
-        return True
-    else:
-        print(heavy_ballot_x, r.status_code, url)
-        return False
+        with requests.get(url, stream=True, allow_redirects=True) as r:
+            if r.status_code == 200:
+                d = os.path.dirname(file)
+                if d != "":
+                    os.makedirs(d, exist_ok=True)
+                with open(file, "wb") as f:
+                    shutil.copyfileobj(r.raw, f)
+                if r.headers.get("last-modified"):
+                    d = my_parsedate(r.headers["last-modified"])
+                    ts = d.timestamp()
+                    try:
+                        os.utime(file, (ts, ts))
+                    except OSError:
+                        pass
+                return True
+            else:
+                print(heavy_ballot_x, r.status_code, url)
+                return False
 
 
 # cf. vs/platform/extensionManagement/node/extensionGalleryService.ts
@@ -504,6 +504,8 @@ def download_assets(destination):
 
     if src_dir != dst_dir:
         shutil.copy2(src_dir / "index.html", dst_dir)
+        shutil.copy2(src_dir / "update.sh", dst_dir)
+        shutil.copy2(src_dir / "update-extensions.py", dst_dir)
 
     os.chdir(dst_dir)
 
