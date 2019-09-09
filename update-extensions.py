@@ -67,10 +67,16 @@ def update_extensions(url, dry_run=False, platform=None):
             colorized_key = COLOR_LIGHT_CYAN + key + COLOR_END
 
             if key not in extensions:
-                print("extension not found: {} {}".format(colorized_key, heavy_ballot_x))
+                print(
+                    "extension not found: {} {}".format(colorized_key, heavy_ballot_x)
+                )
 
             elif extensions[key]["version"] == version:
-                print("extension up to date: {} ({}) {}".format(colorized_key, version, check_mark))
+                print(
+                    "extension up to date: {} ({}) {}".format(
+                        colorized_key, version, check_mark
+                    )
+                )
 
             else:
                 vsix = extensions[key]["vsix"]
@@ -99,9 +105,18 @@ def main():
     """ main function """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", help="increase verbosity", action="store_true")
-    parser.add_argument("-n", "--dry-run", help="scan installed extensions", action="store_true")
-    parser.add_argument("-p", "--platform", help="override platform detection", choices=["linux", "win32", "osx", "linux32"])
+    parser.add_argument(
+        "-v", "--verbose", help="increase verbosity", action="store_true"
+    )
+    parser.add_argument(
+        "-n", "--dry-run", help="scan installed extensions", action="store_true"
+    )
+    parser.add_argument(
+        "-p",
+        "--platform",
+        help="override platform detection",
+        choices=["linux", "win32", "osx", "linux32"],
+    )
     parser.add_argument("url", help="mirror's url", nargs="?")
 
     args = parser.parse_args()
@@ -142,7 +157,9 @@ if __name__ == "__main__":
         ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
 
         mode = ctypes.wintypes.DWORD()
-        if kernel32.GetConsoleMode(kernel32.GetStdHandle(STD_OUTPUT_HANDLE), ctypes.byref(mode)):
+        if kernel32.GetConsoleMode(
+            kernel32.GetStdHandle(STD_OUTPUT_HANDLE), ctypes.byref(mode)
+        ):
             mode = mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING
             kernel32.SetConsoleMode(kernel32.GetStdHandle(STD_OUTPUT_HANDLE), mode)
 
