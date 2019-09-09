@@ -56,11 +56,12 @@ def download(url, file):
     """
     with requests_cache.disabled():
 
-        headers = {
-            "If-Modified-Since": email.utils.format_datetime(
+        headers = {}
+        if os.path.isfile(file):
+            headers["If-Modified-Since"] = email.utils.format_datetime(
                 datetime.datetime.fromtimestamp(os.stat(file).st_mtime)
             )
-        }
+
         with requests.get(url, stream=True, allow_redirects=True, headers=headers) as r:
             if r.status_code == 200:
                 d = os.path.dirname(file)
