@@ -197,6 +197,7 @@ def get_extensions(extensions, vscode_engine):
                     e["publisher"]["displayName"],
                     e["versions"][0]["version"],
                 )
+                logging.warning("KO: %r", e["versions"][0]["properties"])
                 # we will look for a suitable version later
                 not_compatible.append(e["extensionId"])
                 continue
@@ -295,7 +296,7 @@ def get_extensions(extensions, vscode_engine):
     return result
 
 
-def dl_extensions(extensions, json_data, engine_version="1.25.0"):
+def dl_extensions(dst_dir, extensions, json_data, engine_version="1.25.0"):
     """
     download or update extensions
     """
@@ -322,11 +323,11 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
 
         key = e["publisher"]["publisherName"] + "." + e["extensionName"]
         version = e["versions"][0]["version"]
-        vsix = "vsix/" + key + "-" + version + ".vsix"
-        icon = "icons/" + key + ".png"
+        vsix = dst_dir / "vsix" / (key + "-" + version + ".vsix")
+        icon = dst_dir / "icons" / (key + ".png")
 
         # column 1: icon
-        row.append("![{}]({})".format(e["displayName"], icon))
+        row.append("![{}]({})".format(e["displayName"], str(icon.relative_to(dst_dir))))
 
         row.append(
             "[{}]({})".format(
@@ -348,7 +349,11 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
         )
 
         # column 4: version
-        row.append("[{}]({})".format(e["versions"][0]["version"], vsix))
+        row.append(
+            "[{}]({})".format(
+                e["versions"][0]["version"], str(vsix.relative_to(dst_dir))
+            )
+        )
 
         # column 5: last update time
         d = dateutil.parser.parse(e["versions"][0]["lastUpdated"])
@@ -391,7 +396,10 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
                 )
 
             if json_data:
-                json_data["extensions"][key] = {"version": version, "vsix": vsix}
+                json_data["extensions"][key] = {
+                    "version": version,
+                    "vsix": str(vsix.relative_to(dst_dir)),
+                }
 
         else:
             # download the full C/C++ extension
@@ -431,9 +439,9 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
                                     files.append(file)
 
             for file in files:
-                vsix = f'vsix/{key}-{file["platform"]}-{version}.vsix'
+                vsix = dst_dir / "vsix" / f'{key}-{file["platform"]}-{version}.vsix'
 
-                if not os.path.exists(vsix):
+                if not vsix.is_file():
                     print(
                         "{:20} {:35} {:10} {} downloading...".format(
                             e["publisher"]["publisherName"],
@@ -455,16 +463,19 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
                     ok = True
 
                 if ok:
-                    d = datetime.datetime.fromtimestamp(
-                        os.stat(vsix).st_mtime
-                    ).strftime("%Y/%m/%d&nbsp;%H:%M:%S")
+                    d = datetime.datetime.fromtimestamp(vsix.stat().st_mtime).strftime(
+                        "%Y/%m/%d&nbsp;%H:%M:%S"
+                    )
+
+                    vsix_rel = str(vsix.relative_to(dst_dir))
+                    icon_rel = str(icon.relative_to(dst_dir))
 
                     row = [
-                        f"![{e['displayName']}]({icon})",  # icon
+                        f"![{e['displayName']}]({icon_rel})",  # icon
                         f"[vscode-cpptools](https://github.com/Microsoft/vscode-cpptools/releases/)",  # name
                         asset["name"],  # description
                         "[Microsoft](https://github.com/Microsoft/vscode-cpptools)",  # author
-                        f"[{version}]({vsix})",  # version/download link
+                        f"[{version}]({vsix_rel})",  # version/download link
                         f"{d}",
                     ]  # date
                     md.append(row)
@@ -473,16 +484,13 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
                         key2 = f'{key}-{file["platform"]}'
                         json_data["extensions"][key2] = {
                             "version": version,
-                            "vsix": vsix,
+                            "vsix": vsix_rel,
                         }
 
         # download icon
-        if not os.path.exists(icon):
-            os.makedirs("icons", exist_ok=True)
-            url = (
-                e["versions"][0]["assetUri"]
-                + "/Microsoft.VisualStudio.Services.Icons.Small"
-            )
+        if not icon.is_file():
+            icon.parent.mkdir(exist_ok=True)
+            url = f'{e["versions"][0]["assetUri"]}/Microsoft.VisualStudio.Services.Icons.Small'
             ok = download(url, icon)
             if not ok:
                 # default icon: { visual studio code }
@@ -490,12 +498,12 @@ def dl_extensions(extensions, json_data, engine_version="1.25.0"):
                 download(url, icon)
 
     # write the markdown catalog file
-    with open("extensions.md", "w") as f:
+    with open(dst_dir / "extensions.md", "w") as f:
         for i in md:
             print("|".join(i), file=f)
 
 
-def dl_code(json_data):
+def dl_code(dst_dir, json_data):
     """
     download code for Linux from Microsoft debian-like repo
     """
@@ -556,9 +564,9 @@ def dl_code(json_data):
                 filename = latest["filename"]
                 url = f"{repo}/{filename}"
                 deb_filename = os.path.basename(filename)
-                filename = os.path.join("code", deb_filename)
+                filename = dst_dir / "code" / deb_filename
 
-                if os.path.exists(filename):
+                if filename.is_file():
                     print(
                         "{:50} {:20} {}".format(
                             latest["package"], latest["version"], check_mark
@@ -576,7 +584,7 @@ def dl_code(json_data):
                     json_data[package] = {}
                     json_data[package]["version"] = latest["version"].split("-", 1)[0]
                     json_data[package]["tag"] = latest["version"]
-                    json_data[package]["url"] = filename
+                    json_data[package]["url"] = str(filename.relative_to(dst_dir))
                     json_data[package]["deb"] = deb_filename
 
 
@@ -629,6 +637,7 @@ def download_assets(destination):
     logging.info("copy assets into %s", dst_dir)
 
     if src_dir != dst_dir:
+        print(src_dir, dst_dir)
         shutil.copy2(src_dir / "index.html", dst_dir)
         shutil.copy2(src_dir / "update.sh", dst_dir)
         shutil.copy2(src_dir / "update-extensions.py", dst_dir)
@@ -709,9 +718,10 @@ def download_code_vsix(args):
     """
 
     json_data = {"code": {}, "extensions": {}}
+    dst_dir = pathlib.Path(args.root)
 
     # download VSCode
-    dl_code(json_data)
+    dl_code(dst_dir, json_data)
     print()
 
     # prepare the extension list
@@ -759,10 +769,10 @@ def download_code_vsix(args):
             engine_version = "*"
 
     # download extensions
-    dl_extensions(extensions, json_data, engine_version)
+    dl_extensions(dst_dir, extensions, json_data, engine_version)
 
     # write the JSON data file
-    with open("code.json", "w") as f:
+    with open(dst_dir / "data.json", "w") as f:
         json.dump(json_data, f, indent=4)
 
 
@@ -814,6 +824,11 @@ def main():
     parser.add_argument(
         "--assets", help="download css and images (and exit)", action="store_true"
     )
+    parser.add_argument(
+        "--no-assets",
+        help="do not download css and images (and exit)",
+        action="store_true",
+    )
     parser.add_argument("--cache", help="enable Requests cache", action="store_true")
     parser.add_argument("-r", "--root", help="set the root directory")
     parser.add_argument("-s", "--server", help="HTTP server", action="store_true")
@@ -862,14 +877,14 @@ def main():
 
     # action 1: download assets (and do nothing else)
     if args.assets:
+        logging.warning("--assets is deprecated")
         return download_assets(args.root)
 
     # action 2: get a conf file (and do nothing else)
     if args.yaml:
         return print_conf(args)
 
-    # action 3: download code/vsix
-    os.chdir(args.root)
+    # action 3: download code/vsix and assets
     download_code_vsix(args)
     if args.keep is not None:
         purge("code", args.keep)
@@ -877,6 +892,8 @@ def main():
     else:
         purge("code", 0)
         purge("vsix", 0)
+    if not args.no_assets:
+        download_assets(args.root)
 
 
 def win_term():

@@ -40,10 +40,10 @@ def update_extensions(url, dry_run=False, platform=None):
     # load database
     try:
         if url is None:
-            with open("code.json", "r") as f:
+            with open("data.json", "r") as f:
                 extensions = json.load(f)["extensions"]
         else:
-            r = requests.get(url + "/code.json")
+            r = requests.get(url + "/data.json")
             if r.status_code == 200:
                 extensions = r.json()["extensions"]
             else:
