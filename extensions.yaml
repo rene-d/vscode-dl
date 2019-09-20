@@ -58,5 +58,7 @@ extensions:
 - ms-vscode-remote.vscode-remote-extensionpack
 - ms-vscode-remote.remote-ssh-explorer
 - ms-vscode-remote.remote-wsl
+- vscode-icons-team.vscode-icons
+- streetsidesoftware.code-spell-checker
 # - idleberg.applescript
 # - PeterJausovec.vscode-docker
