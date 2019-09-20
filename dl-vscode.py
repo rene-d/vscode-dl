@@ -639,8 +639,7 @@ def download_assets(destination):
     if src_dir != dst_dir:
         print(src_dir, dst_dir)
         shutil.copy2(src_dir / "index.html", dst_dir)
-        shutil.copy2(src_dir / "update.sh", dst_dir)
-        shutil.copy2(src_dir / "update-extensions.py", dst_dir)
+        shutil.copy2(src_dir / "update.py", dst_dir)
 
     os.chdir(dst_dir)
 
