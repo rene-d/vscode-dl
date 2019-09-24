@@ -108,7 +108,13 @@ def update_code(url, dry_run, platform):
     colorized_key = COLOR_LIGHT_CYAN + "Visual Studio Code" + COLOR_END
 
     try:
-        version = subprocess.check_output("dpkg -s code | grep -o '^Version: .*$'", shell=True).decode().split()[1]
+        version = (
+            subprocess.check_output(
+                "dpkg -s code | grep -o '^Version: .*$'", shell=True
+            )
+            .decode()
+            .split()[1]
+        )
     except subprocess.CalledProcessError:
         print("not running Linux Debian/Ubuntu ?")
         return
@@ -130,7 +136,10 @@ def update_code(url, dry_run, platform):
     else:
         print(
             "{} up to date: {} ({}) {}".format(
-                colorized_key, COLOR_GREEN + code["version"] + COLOR_END, COLOR_GREEN + code["tag"] + COLOR_END, check_mark
+                colorized_key,
+                COLOR_GREEN + code["version"] + COLOR_END,
+                COLOR_GREEN + code["tag"] + COLOR_END,
+                check_mark,
             )
         )
 
@@ -182,10 +191,16 @@ def update_extensions(url, dry_run, platform):
             colorized_key = COLOR_LIGHT_CYAN + key + COLOR_END
 
             if key not in extensions:
-                print("extension not found: {} {}".format(colorized_key, heavy_ballot_x))
+                print(
+                    "extension not found: {} {}".format(colorized_key, heavy_ballot_x)
+                )
 
             elif extensions[key]["version"] == version:
-                print("extension up to date: {} ({}) {}".format(colorized_key, version, check_mark))
+                print(
+                    "extension up to date: {} ({}) {}".format(
+                        colorized_key, version, check_mark
+                    )
+                )
 
             else:
                 vsix = extensions[key]["vsix"]
@@ -226,7 +241,9 @@ def install_extensions(url, dry_run, platform, processed):
         vsix = data[key]["vsix"]
         version = data[key]["version"]
         colorized_key = COLOR_LIGHT_CYAN + key + COLOR_END
-        print("installing: {} version {} {}".format(colorized_key, version, hot_beverage))
+        print(
+            "installing: {} version {} {}".format(colorized_key, version, hot_beverage)
+        )
         install_extension(url, vsix, dry_run)
 
 
@@ -234,12 +251,27 @@ def main():
     """ main function """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", help="increase verbosity", action="store_true")
-    parser.add_argument("-n", "--dry-run", help="scan installed extensions", action="store_true")
-    parser.add_argument("-E", "--extensions", help="update extensions", action="store_true")
-    parser.add_argument("-C", "--code", help="install/update VSCode", action="store_true")
-    parser.add_argument("-F", "--favorites", help="install favorite extensions", action="store_true")
-    parser.add_argument("-p", "--platform", help="override platform detection", choices=["linux", "win32", "osx", "linux32"])
+    parser.add_argument(
+        "-v", "--verbose", help="increase verbosity", action="store_true"
+    )
+    parser.add_argument(
+        "-n", "--dry-run", help="scan installed extensions", action="store_true"
+    )
+    parser.add_argument(
+        "-E", "--extensions", help="update extensions", action="store_true"
+    )
+    parser.add_argument(
+        "-C", "--code", help="install/update VSCode", action="store_true"
+    )
+    parser.add_argument(
+        "-F", "--favorites", help="install favorite extensions", action="store_true"
+    )
+    parser.add_argument(
+        "-p",
+        "--platform",
+        help="override platform detection",
+        choices=["linux", "win32", "osx", "linux32"],
+    )
     parser.add_argument("url", help="mirror's url", nargs="?", default=".")
 
     args = parser.parse_args()
@@ -289,7 +321,9 @@ if __name__ == "__main__":
         ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
 
         mode = ctypes.wintypes.DWORD()
-        if kernel32.GetConsoleMode(kernel32.GetStdHandle(STD_OUTPUT_HANDLE), ctypes.byref(mode)):
+        if kernel32.GetConsoleMode(
+            kernel32.GetStdHandle(STD_OUTPUT_HANDLE), ctypes.byref(mode)
+        ):
             mode = mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING
             kernel32.SetConsoleMode(kernel32.GetStdHandle(STD_OUTPUT_HANDLE), mode)
 
