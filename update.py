@@ -130,10 +130,7 @@ def update_code(url, dry_run, platform):
     else:
         print(
             "{} up to date: {} ({}) {}".format(
-                colorized_key,
-                COLOR_GREEN + code["version"] + COLOR_END,
-                COLOR_GREEN + code["tag"] + COLOR_END,
-                check_mark,
+                colorized_key, COLOR_GREEN + code["version"] + COLOR_END, COLOR_GREEN + code["tag"] + COLOR_END, check_mark
             )
         )
 
@@ -242,9 +239,7 @@ def main():
     parser.add_argument("-E", "--extensions", help="update extensions", action="store_true")
     parser.add_argument("-C", "--code", help="install/update VSCode", action="store_true")
     parser.add_argument("-F", "--favorites", help="install favorite extensions", action="store_true")
-    parser.add_argument(
-        "-p", "--platform", help="override platform detection", choices=["linux", "win32", "osx", "linux32"]
-    )
+    parser.add_argument("-p", "--platform", help="override platform detection", choices=["linux", "win32", "osx", "linux32"])
     parser.add_argument("url", help="mirror's url", nargs="?", default=".")
 
     args = parser.parse_args()
