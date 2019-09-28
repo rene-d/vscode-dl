@@ -1,8 +1,6 @@
-# not need to versioning
+# versioning not needed
 .vscode/
-
 web/
 cache.sqlite
-
 # other folders/files
 __pycache__/

@@ -36,7 +36,6 @@ extensions:
 - qub.qub-xml-vscode
 - redhat.java
 - redhat.vscode-yaml
-- robertohuertasm.vscode-icons
 - slevesque.vscode-hexdump
 - twxs.cmake
 - vadimcn.vscode-lldb
@@ -58,5 +57,6 @@ extensions:
 - ms-vscode-remote.vscode-remote-extensionpack
 - ms-vscode-remote.remote-ssh-explorer
 - ms-vscode-remote.remote-wsl
-# - idleberg.applescript
-# - PeterJausovec.vscode-docker
+- vscode-icons-team.vscode-icons
+- streetsidesoftware.code-spell-checker
+- idleberg.applescript
