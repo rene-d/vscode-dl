@@ -108,27 +108,45 @@ def update_code(url, dry_run, platform):
     colorized_key = COLOR_LIGHT_CYAN + "Visual Studio Code" + COLOR_END
 
     try:
-        version = (
-            subprocess.check_output(
-                "dpkg -s code | grep -o '^Version: .*$'", shell=True
-            )
-            .decode()
-            .split()[1]
+        cmd = subprocess.run(
+            ["dpkg-query", "--show", "code"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
         )
-    except subprocess.CalledProcessError:
-        print("not running Linux Debian/Ubuntu ?")
+        if cmd.returncode != 0 and cmd.returncode != 1:
+            raise OSError(cmd.returncode)
+
+        version = cmd.stdout.decode()
+        if version != "":
+            version = version.split()[1]
+
+    except Exception as e:
+        print("not running Linux Debian/Ubuntu?")
+        print("...don't know how to check Code version neither to install it.")
+        print(e)
         return
 
-    if version != code["tag"] or 0:
-        print(
-            "updating: {} from version {} to version {} ({}) {}".format(
-                colorized_key,
-                COLOR_RED + version + COLOR_END,
-                COLOR_GREEN + code["version"] + COLOR_END,
-                COLOR_GREEN + code["tag"] + COLOR_END,
-                hot_beverage,
+    if version != code["tag"]:
+
+        if version == "":
+            print(
+                "installing: {} version {} ({}) {}".format(
+                    colorized_key,
+                    COLOR_GREEN + code["version"] + COLOR_END,
+                    COLOR_GREEN + code["tag"] + COLOR_END,
+                    hot_beverage,
+                )
             )
-        )
+        else:
+            print(
+                "updating: {} from version {} to version {} ({}) {}".format(
+                    colorized_key,
+                    COLOR_RED + version + COLOR_END,
+                    COLOR_GREEN + code["version"] + COLOR_END,
+                    COLOR_GREEN + code["tag"] + COLOR_END,
+                    hot_beverage,
+                )
+            )
         if not dry_run:
             deb = download_vsix(url, code["url"])
             if deb:
@@ -217,7 +235,7 @@ def update_extensions(url, dry_run, platform):
     return processed
 
 
-def install_extensions(url, dry_run, platform, processed):
+def install_extensions(url, dry_run, platform, processed, team):
     """
     """
 
@@ -227,7 +245,7 @@ def install_extensions(url, dry_run, platform, processed):
         return
 
     data = data["extensions"]
-    extensions = load_resource(url, "extensions.json")
+    extensions = load_resource(url, team + ".json")
     if not extensions:
         return
 
@@ -272,6 +290,7 @@ def main():
         help="override platform detection",
         choices=["linux", "win32", "osx", "linux32"],
     )
+    parser.add_argument("-t", "--team", help="name of extension list", default="team")
     parser.add_argument("url", help="mirror's url", nargs="?", default=".")
 
     args = parser.parse_args()
@@ -305,7 +324,7 @@ def main():
     else:
         processed = []
     if args.favorites:
-        install_extensions(args.url, args.dry_run, args.platform, processed)
+        install_extensions(args.url, args.dry_run, args.platform, processed, args.team)
 
 
 if __name__ == "__main__":

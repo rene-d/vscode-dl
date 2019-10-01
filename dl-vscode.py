@@ -616,7 +616,11 @@ def download_assets(destination):
 
     if src_dir != dst_dir:
         shutil.copy2(src_dir / "index.html", dst_dir)
-        shutil.copy2(src_dir / "update.py", dst_dir)
+        shutil.copy2(src_dir / "get.py", dst_dir)
+
+    if (dst_dir / "team.json").exists() is False:
+        with (dst_dir / "team.json").open("w") as fd:
+            fd.write("[]")
 
     os.chdir(dst_dir)
 
