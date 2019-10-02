@@ -28,7 +28,7 @@ COLOR_END = "\033[0m"
 
 
 # keep a reference to the temporaries files
-last_temporary_file = None
+last_temporary_file = []
 
 
 def download_vsix(url, name):
@@ -53,7 +53,7 @@ def download_vsix(url, name):
             fp = tempfile.NamedTemporaryFile(suffix=("_" + os.path.basename(name)))
             shutil.copyfileobj(r.raw, fp.file)
             fp.file.close()
-            last_temporary_file = fp  # noqa
+            last_temporary_file.append(fp)  # noqa
             return pathlib.Path(fp.name)
         else:
             r.raise_for_status()
@@ -94,7 +94,7 @@ def load_resource(url, name):
 
 def update_code(url, dry_run, platform):
     """
-    install or update VIsual Studio Code
+    install or update Visual Studio Code
     """
 
     print("installing or updating Visual Studio Code...")
@@ -175,7 +175,7 @@ def install_extension(url, vsix, dry_run):
         if vsix_path:
             cmd = "code --install-extension '{}'".format(vsix_path)
             s = subprocess.check_output(cmd, shell=True)
-            print("\033[2   m" + s.decode() + "\033[0m")
+            print("\033[2m" + s.decode() + "\033[0m")
 
 
 def update_extensions(url, dry_run, platform):
@@ -291,7 +291,7 @@ def main():
         choices=["linux", "win32", "osx", "linux32"],
     )
     parser.add_argument("-t", "--team", help="name of extension list", default="team")
-    parser.add_argument("url", help="mirror's url", nargs="?", default=".")
+    parser.add_argument("url", help="mirror url", nargs="?", default=".")
 
     args = parser.parse_args()
 
