@@ -14,39 +14,50 @@ When run again, it tries to update extensions and VSCode to their latest version
 * [Requests](http://python-requests.org) and [Requests-cache](https://github.com/reclosedev/requests-cache)
 * [PyYAML](https://pyyaml.org)
 
-````
+```bash
 pip3 install -U -r requirements.txt
-````
+```
 
-## Usage
+## Basic usage
 
 Download Visual Studio Code and extensions listed in `extensions.yaml` ([screenshot](http://rene-d.github.io/dl-vscode/screenshot.html)) :
-````
+```bash
 python3 dl-vscode.py
-````
+```
 
 Scan installed extensions and add them to the download list :
-````
+```bash
 python3 dl-vscode.py -i
-````
+```
 
-Download assets for `index.html` (javascript, .css and images) :
-````
-python3 dl-vscode.py --assets
-````
+More options are available. Use `python3 dl-vscode.py --help` to show them.
 
-## Extensions update tool
+## Installation and update tool
 
-On a offline installation, [update-extensions.py](update-extensions.py) downloads and updates the installed extensions (Python3 and [Requests](http://python-requests.org) package required) from the mirror.
+On a offline installation, [get.py](get.py) install or updates Code, downloads and updates the installed extensions from the mirror.
 
-````bash
+It requires Python 3.5+ and [requests](http://python-requests.org) that should be installed on all modern Debian/Ubuntu.
+
+```bash
 # One-liner:
-curl -s http://mirror.url:port/update-extensions.py | python3 - http://mirror.url:port/
+curl -sL http://mirror.url:port/get.py | python3 - http://mirror.url:port/
 
 # Alternatively, you can run the script into the mirror folder:
 cd /path/to/vscode-mirror
-python3 update-extensions.py
-````
+python3 get.py
+```
+
+The flag `-t` permits to provide a minimal set of extensions to be installed. They should be listed in a JSON array.
+
+Example of a file `myteam.json` (that should be copied in the mirror directory):
+```JSON
+["ms-python.python", "formulahendry.code-runner"]
+```
+
+The following command wil install or update Code and the extensions listed above.
+```bash
+python3 <(curl -sL http://mirror.url:port/get.py) -t myteam http://mirror.url:port/
+```
 
 ## Links
 

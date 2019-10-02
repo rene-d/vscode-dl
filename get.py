@@ -290,7 +290,7 @@ def main():
         help="override platform detection",
         choices=["linux", "win32", "osx", "linux32"],
     )
-    parser.add_argument("-t", "--team", help="name of extension list", default="team")
+    parser.add_argument("-t", "--team", help="name of extension list")
     parser.add_argument("url", help="mirror url", nargs="?", default=".")
 
     args = parser.parse_args()
@@ -323,8 +323,8 @@ def main():
         processed = update_extensions(args.url, args.dry_run, args.platform)
     else:
         processed = []
-    if args.favorites:
-        install_extensions(args.url, args.dry_run, args.platform, processed, args.team)
+    if args.favorites or args.team:
+        install_extensions(args.url, args.dry_run, args.platform, processed, args.team or "team")
 
 
 if __name__ == "__main__":
