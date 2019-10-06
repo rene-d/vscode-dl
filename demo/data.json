@@ -1,0 +1,50 @@
+{
+    "code": {
+        "version": "1.38.1",
+        "tag": "1.38.1-1568209190",
+        "url": "code/code_1.38.1-1568209190_amd64.deb",
+        "deb": "code_1.38.1-1568209190_amd64.deb"
+    },
+    "extensions": {
+        "ms-python.python": {
+            "version": "2019.9.34911",
+            "vsix": "vsix/ms-python.python-2019.9.34911.vsix",
+            "vsixAsset": "https://ms-python.gallerycdn.vsassets.io/extensions/ms-python/python/2019.9.34911/1567811111030/Microsoft.VisualStudio.Services.VSIXPackage",
+            "url": "https://marketplace.visualstudio.com/items?itemName=ms-python.python",
+            "icon": "icons/ms-python.python.png",
+            "iconAsset": "https://ms-python.gallerycdn.vsassets.io/extensions/ms-python/python/2019.9.34911/1567811111030/Microsoft.VisualStudio.Services.Icons.Small",
+            "name": "Python",
+            "description": "Linting, Debugging (multi-threaded, remote), Intellisense, code formatting, refactoring, unit tests, snippets, and more.",
+            "author": "Microsoft",
+            "authorUrl": "https://marketplace.visualstudio.com/publishers/ms-python",
+            "lastUpdated": "2019/09/06&nbsp;23:07:37"
+        },
+        "ms-vscode.cpptools-linux": {
+            "version": "0.25.1",
+            "vsix": "vsix/ms-vscode.cpptools-linux-0.25.1.vsix",
+            "vsixAsset": "https://github.com/microsoft/vscode-cpptools/releases/download/0.25.1/cpptools-linux.vsix",
+            "name": "C/C++ (linux)",
+            "url": "https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools",
+            "icon": "icons/ms-vscode.cpptools.png",
+            "iconAsset": "https://ms-vscode.gallerycdn.vsassets.io/extensions/ms-vscode/cpptools/0.25.1/1567124192893/Microsoft.VisualStudio.Services.Icons.Small",
+            "description": "C/C++ IntelliSense, debugging, and code browsing.",
+            "author": "Microsoft",
+            "authorUrl": "https://marketplace.visualstudio.com/publishers/ms-vscode",
+            "lastUpdated": "2019/08/28&nbsp;23:24:33",
+            "platform": "linux"
+        },
+        "vscode-icons-team.vscode-icons": {
+            "version": "9.4.0",
+            "vsix": "vsix/vscode-icons-team.vscode-icons-9.4.0.vsix",
+            "vsixAsset": "https://vscode-icons-team.gallerycdn.vsassets.io/extensions/vscode-icons-team/vscode-icons/9.4.0/1569078503702/Microsoft.VisualStudio.Services.VSIXPackage",
+            "url": "https://marketplace.visualstudio.com/items?itemName=vscode-icons-team.vscode-icons",
+            "icon": "icons/vscode-icons-team.vscode-icons.png",
+            "iconAsset": "https://vscode-icons-team.gallerycdn.vsassets.io/extensions/vscode-icons-team/vscode-icons/9.4.0/1569078503702/Microsoft.VisualStudio.Services.Icons.Small",
+            "name": "vscode-icons",
+            "description": "Icons for Visual Studio Code",
+            "author": "VSCode Icons Team",
+            "authorUrl": "https://marketplace.visualstudio.com/publishers/vscode-icons-team",
+            "lastUpdated": "2019/09/21&nbsp;15:10:44"
+        }
+    }
+}
