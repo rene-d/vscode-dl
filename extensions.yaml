@@ -1,4 +1,4 @@
-# configuration file for dl-vscode.py
+# configuration file for vscode-dl.py
 #
 web_root: web
 
