@@ -59,19 +59,6 @@ The following command wil install or update Code and the extensions listed above
 python3 <(curl -sL http://mirror.url:port/get.py) -t myteam http://mirror.url:port/
 ```
 
-## Extensions update tool
-
-On a offline installation, [update-extensions.py](https://github.com/rene-d/dl-vscode/blob/master/update-extensions.py) downloads and updates the installed extensions (Python3 and [Requests](http://python-requests.org) package required) from the mirror.
-
-````bash
-# One-liner:
-curl -s http://mirror.url:port/update-extensions.py | python3 - http://mirror.url:port/
-
-# Alternatively, you can run the script into the mirror folder:
-cd /path/to/vscode-mirror
-python3 update-extensions.py
-````
-
 ## Links
 
 * [Official Visual Studio Code site](https://code.visualstudio.com/)
