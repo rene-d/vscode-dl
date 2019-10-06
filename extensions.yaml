@@ -1,32 +1,62 @@
+# configuration file for vscode-dl.py
+#
+web_root: web
+
 # <publisherName>.<extensionName>
 extensions:
-  - DotJoshJohnson.xml
-  - MS-CEINTL.vscode-language-pack-fr
-  - bierner.markdown-preview-github-styles
-  - donjayamanne.githistory
-  - eamodio.gitlens
-  - flipphillips.wolfram-language
-  - formulahendry.code-runner
-  - goessner.mdmath
-  - humao.rest-client
-  - jithurjacob.nbpreviewer
-  - justusadam.language-haskell
-  - ms-python.python
-  - ms-vscode.cpptools
-  - nobuhito.printcode
-  - robertohuertasm.vscode-icons
-  - slevesque.vscode-hexdump
-  - twxs.cmake
-  - vadimcn.vscode-lldb
-  - vector-of-bool.cmake-tools
-  - xyz.plsql-language
-  - keith.robotframework
-  - TomiTurtiainen.rf-intellisense
-  - robertohuertasm.vscode-icons
-  - DavidAnson.vscode-markdownlint
-  - PeterJausovec.vscode-docker
-  - ms-vscode.Go
-  - redhat.java
-  - redhat.vscode-yaml
-  - zxh404.vscode-proto3
-  - qub.qub-xml-vscode
+- DavidAnson.vscode-markdownlint
+- DotJoshJohnson.xml
+- EFanZh.graphviz-preview
+- James-Yu.latex-workshop
+- MS-CEINTL.vscode-language-pack-fr
+- Stephanvs.dot
+- TomiTurtiainen.rf-intellisense
+- arichika.previewseqdiag-vscode
+- bierner.markdown-preview-github-styles
+- donjayamanne.githistory
+- dunstontc.viml
+- eamodio.gitlens
+- felixrieseberg.vsc-travis-ci-status
+- flipphillips.wolfram-language
+- formulahendry.code-runner
+- geeklearningio.graphviz-markdown-preview
+- goessner.mdmath
+- humao.rest-client
+- jebbs.plantuml
+- jithurjacob.nbpreviewer
+- jumpinjackie.vscode-map-preview
+- justusadam.language-haskell
+- keith.robotframework
+- ms-python.python
+- ms-vscode.Go
+- ms-vscode.cpptools
+- mscgenjs.vscode-mscgen
+- nobuhito.printcode
+- qhoekman.language-plantuml
+- qub.qub-xml-vscode
+- redhat.java
+- redhat.vscode-yaml
+- slevesque.vscode-hexdump
+- twxs.cmake
+- vadimcn.vscode-lldb
+- vector-of-bool.cmake-tools
+- vscodevim.vim
+- waderyan.gitblame
+- xyz.plsql-language
+- zxh404.vscode-proto3
+- platformio.platformio-ide
+- 13xforever.language-x86-64-assembly
+- vsciot-vscode.vscode-arduino
+- GrapeCity.gc-excelviewer
+- freebroccolo.reasonml
+- mechatroner.rainbow-csv
+- ms-azuretools.vscode-docker
+- ms-vscode-remote.remote-ssh-edit
+- ms-vscode-remote.remote-ssh
+- ms-vscode-remote.remote-containers
+- ms-vscode-remote.vscode-remote-extensionpack
+- ms-vscode-remote.remote-ssh-explorer
+- ms-vscode-remote.remote-wsl
+- vscode-icons-team.vscode-icons
+- streetsidesoftware.code-spell-checker
+- idleberg.applescript

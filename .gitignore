@@ -1,18 +1,6 @@
-# not need to versioning
+# versioning not needed
 .vscode/
-
-# assets
-GitHub2.css
-markdown-it.min.js
-highlight.min.js
-default.min.css
-vs2015.min.css
-images/
-favicon.ico
-
-# downloaded files
-code.json
-extensions.md
-code/
-vsix/
-icons/
+web/
+cache.sqlite
+# other folders/files
+__pycache__/
