@@ -1,8 +1,8 @@
-# dl-vscode
+# VSCode Downloader
 
 ## Description
 
-[dl-vscode](https://rene-d.github.io/dl-vscode) is a Python3 script that downloads the latest Linux version of [Visual Studio Code](http://code.visualstudio.com) and a curated list of extensions for installation on computers without Internet connection or proxy restrictions.
+[vscode-dl](https://rene-d.github.io/vscode-dl) is a Python3 script that downloads the latest Linux version of [Visual Studio Code](http://code.visualstudio.com) and a curated list of extensions for installation on computers without Internet connection or proxy restrictions.
 
 The program also creates a catalog in JSON and Markdown that can be incorporated into a web page, like this [example](https://rene-d.github.io/dl-vscode/demo/).
 
@@ -20,17 +20,17 @@ pip3 install -U -r requirements.txt
 
 ## Basic usage
 
-Download Visual Studio Code and extensions listed in `extensions.yaml` ([screenshot](http://rene-d.github.io/dl-vscode/screenshot.html)) :
+Download Visual Studio Code and extensions listed in `extensions.yaml` ([screenshot](http://rene-d.github.io/vscode-dl/screenshot.html)) :
 ```bash
-python3 dl-vscode.py
+python3 vscode-dl.py
 ```
 
 Scan installed extensions and add them to the download list :
 ```bash
-python3 dl-vscode.py -i
+python3 vscode-dl.py -i
 ```
 
-More options are available. Use `python3 dl-vscode.py --help` to show them.
+More options are available. Use `python3 vscode-dl.py --help` to show them.
 
 ## Installation and update tool
 
