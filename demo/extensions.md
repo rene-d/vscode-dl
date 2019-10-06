@@ -1,5 +1,0 @@
-Icon|Name|Description|Author|Version|Date
-----|----|-----------|------|-------|----
-![Python](ms-python.python.png)|[Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)|Linting, Debugging (multi-threaded, remote), Intellisense, code formatting, refactoring, unit tests, snippets, and more.|[Microsoft](https://marketplace.visualstudio.com/publishers/ms-python)|[2019.9.34911](vsix/ms-python.python-2019.9.34911.vsix)|2019/09/06&nbsp;23:07:37
-![C/C++ (linux)]ms-vscode.cpptools.png)|[C/C++ (linux)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)|C/C++ IntelliSense, debugging, and code browsing.|[Microsoft](https://marketplace.visualstudio.com/publishers/ms-vscode)|[0.25.1](vsix/ms-vscode.cpptools-linux-0.25.1.vsix)|2019/08/28&nbsp;23:24:33
-![vscode-icons](vscode-icons-team.vscode-icons.png)|[vscode-icons](https://marketplace.visualstudio.com/items?itemName=vscode-icons-team.vscode-icons)|Icons for Visual Studio Code|[VSCode Icons Team](https://marketplace.visualstudio.com/publishers/vscode-icons-team)|[9.4.0](vsix/vscode-icons-team.vscode-icons-9.4.0.vsix)|2019/09/21&nbsp;15:10:44
