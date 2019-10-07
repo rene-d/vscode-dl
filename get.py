@@ -151,6 +151,12 @@ def update_code(url, dry_run, platform):
             deb = download_vsix(url, code["url"])
             if deb:
                 subprocess.call(["sudo", "dpkg", "-i", deb])
+                subprocess.call(
+                    "sudo sed -i 's/^deb/# deb/' /etc/apt/sources.list.d/vscode.list",
+                    shell=True,
+                    stderr=subprocess.DEVNULL
+                )
+
     else:
         print(
             "{} up to date: {} ({}) {}".format(
@@ -324,7 +330,9 @@ def main():
     else:
         processed = []
     if args.favorites or args.team:
-        install_extensions(args.url, args.dry_run, args.platform, processed, args.team or "team")
+        install_extensions(
+            args.url, args.dry_run, args.platform, processed, args.team or "team"
+        )
 
 
 if __name__ == "__main__":
