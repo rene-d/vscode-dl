@@ -60,3 +60,4 @@ extensions:
 - vscode-icons-team.vscode-icons
 - streetsidesoftware.code-spell-checker
 - idleberg.applescript
+- alexkrechik.cucumberautocomplete
