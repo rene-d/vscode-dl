@@ -61,3 +61,5 @@ extensions:
 - streetsidesoftware.code-spell-checker
 - idleberg.applescript
 - alexkrechik.cucumberautocomplete
+- mhutchie.git-graph
+- Atlassian.atlascode
