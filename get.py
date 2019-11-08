@@ -54,7 +54,7 @@ def download_vsix(url, name):
             shutil.copyfileobj(r.raw, fp.file)
             fp.file.close()
             last_temporary_file.append(fp)  # noqa
-            return pathlib.Path(fp.name)
+            return pathlib.Path(fp.name).as_posix()
         else:
             r.raise_for_status()
 
@@ -150,12 +150,41 @@ def update_code(url, dry_run, platform):
         if not dry_run:
             deb = download_vsix(url, code["url"])
             if deb:
-                subprocess.call(["sudo", "dpkg", "-i", deb])
-                subprocess.call(
-                    "sudo sed -i 's/^deb/# deb/' /etc/apt/sources.list.d/vscode.list",
-                    shell=True,
-                    stderr=subprocess.DEVNULL
-                )
+                # call dpkg to install the .deb
+                cmd = ["dpkg", "-i", deb]
+                if os.getuid() != 0:
+                    cmd.insert(0, "sudo")
+                subprocess.call(cmd)
+
+                # deactivate the source list
+                cmd = [
+                    "sed",
+                    "-i",
+                    "s/^deb/# deb/",
+                    "/etc/apt/sources.list.d/vscode.list",
+                ]
+                if os.getuid() != 0:
+                    cmd.insert(0, "sudo")
+                subprocess.call(cmd, stderr=subprocess.DEVNULL)
+
+            settings = pathlib.Path("~/.config/Code/User/settings.json").expanduser()
+            if settings.exists() is False or settings.stat().st_size == 0:
+                settings.parent.mkdir(parents=True, exist_ok=True)
+                with settings.open("w") as fd:
+                    fd.write(
+                        """\
+{
+    "update.mode": "none",
+    "update.showReleaseNotes": false,
+    "extensions.autoCheckUpdates": false,
+    "extensions.autoUpdate": false,
+    "telemetry.enableCrashReporter": false,
+    "telemetry.enableTelemetry": false,
+    "files.trimTrailingWhitespace": true,
+    "files.trimFinalNewlines": true,
+}"""
+                    )
+                print("created: {}".format(settings))
 
     else:
         print(
@@ -188,6 +217,9 @@ def update_extensions(url, dry_run, platform):
     """
     update installed extensions
     """
+
+    if os.getuid() == 0:
+        return
 
     processed = []
 

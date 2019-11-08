@@ -62,4 +62,5 @@ extensions:
 - idleberg.applescript
 - alexkrechik.cucumberautocomplete
 - mhutchie.git-graph
-- Atlassian.atlascode
+- atlassian.atlascode
+- rebornix.Ruby
