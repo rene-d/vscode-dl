@@ -229,6 +229,11 @@ def update_extensions(url, dry_run, platform):
         return processed
     extensions = data["extensions"]
 
+    # add keys in lowercase
+    for key in extensions.keys().copy():
+        if key != key.lower():
+            extensions[key.lower()] = extensions[key]
+
     # get installed extensions
     print("fetching installed extensions...")
     s = subprocess.check_output("code --list-extensions --show-versions", shell=True)
@@ -246,12 +251,14 @@ def update_extensions(url, dry_run, platform):
 
             colorized_key = COLOR_LIGHT_CYAN + key + COLOR_END
 
-            if key not in extensions:
+            extension = extensions.get(key.lower())
+
+            if extension is None:
                 print(
                     "extension not found: {} {}".format(colorized_key, heavy_ballot_x)
                 )
 
-            elif extensions[key]["version"] == version:
+            elif extension["version"] == version:
                 print(
                     "extension up to date: {} ({}) {}".format(
                         colorized_key, version, check_mark
@@ -259,10 +266,10 @@ def update_extensions(url, dry_run, platform):
                 )
 
             else:
-                vsix = extensions[key]["vsix"]
+                vsix = extension["vsix"]
                 print(
                     "updating: {} from version {} to version {} {}".format(
-                        colorized_key, version, extensions[key]["version"], hot_beverage
+                        colorized_key, version, extension["version"], hot_beverage
                     )
                 )
                 install_extension(url, vsix, dry_run)
