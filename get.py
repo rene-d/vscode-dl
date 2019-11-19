@@ -230,7 +230,7 @@ def update_extensions(url, dry_run, platform):
     extensions = data["extensions"]
 
     # add keys in lowercase
-    for key in extensions.keys().copy():
+    for key in extensions.keys():
         if key != key.lower():
             extensions[key.lower()] = extensions[key]
 
