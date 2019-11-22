@@ -65,3 +65,7 @@ extensions:
 - Atlassian.atlascode
 - rebornix.Ruby
 - alexkrechik.cucumberautocomplete
+- stevejpurves.cucumber
+- Blodwynn.featurehighlight
+- vscoss.vscode-ansible
+
