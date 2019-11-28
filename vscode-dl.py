@@ -482,19 +482,19 @@ def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run):
             new_row(data)
 
 
-def dl_code(dst_dir, channel="stable"):
+def dl_code(dst_dir, channel="stable", revision="latest"):
     """
     download code for Linux from Microsoft debian-like repo
     """
 
-    url = f"https://update.code.visualstudio.com/latest/linux-deb-x64/{channel}"
+    url = f"https://update.code.visualstudio.com/{revision}/linux-deb-x64/{channel}"
     r = requests.get(url, allow_redirects=False)
     if r.status_code != 302:
         logging.error(f"cannot get {channel} channel")
         return
 
     url = r.headers["Location"]
-    path = urllib.parse.urlsplit(url).path.split('/')
+    path = urllib.parse.urlsplit(url).path.split("/")
     if len(path) != 4:
         logging.error(f"cannot parse url {url}")
         return
@@ -503,17 +503,28 @@ def dl_code(dst_dir, channel="stable"):
     deb_filename = path[3]
     package = "code"
     filename = dst_dir / "code" / commit_id / deb_filename
-    version = re.search(r"_(.+)_", deb_filename).group(1)
+    tag = re.search(r"_(.+)_", deb_filename).group(1)
+    version = tag.split("-", 1)[0]
 
     if filename.is_file():
-        print("{:50} {:20} {}".format(package, version, check_mark))
+        print("{:50} {:20} {}".format(package, tag, check_mark))
     else:
-        print("{:50} {:20} {} downloading...".format(package, version, heavy_ballot_x))
+        print("{:50} {:20} {} downloading...".format(package, tag, heavy_ballot_x))
         download(url, filename)
 
+        d = filename.parent.parent / revision
+        if d.is_symlink():
+            d.unlink()
+        d.symlink_to(commit_id, target_is_directory=True)
+
+        d = filename.parent.parent / version
+        if d.is_symlink():
+            d.unlink()
+        d.symlink_to(commit_id, target_is_directory=True)
+
     data = {}
-    data["version"] = version.split("-", 1)[0]
-    data["tag"] = version
+    data["version"] = version
+    data["tag"] = tag
     data["channel "] = channel
     data["commit_id"] = commit_id
     data["url"] = str(filename.relative_to(dst_dir))
@@ -525,16 +536,21 @@ def dl_code(dst_dir, channel="stable"):
         url = f"https://update.code.visualstudio.com/commit:{commit_id}/{package}/{channel}"
         r = requests.get(url, allow_redirects=False)
         if r.status_code == 302:
-            url =     r.headers["Location"]
-            path = urllib.parse.urlsplit(url).path.split('/')
-            if len(path) != 4: continue
+            url = r.headers["Location"]
+            path = urllib.parse.urlsplit(url).path.split("/")
+            if len(path) != 4:
+                continue
             filename = dst_dir / "code" / commit_id / path[3]
             data["server"].append(path[3])
 
             if filename.is_file():
                 print("{:50} {:20} {}".format(package, version, check_mark))
             else:
-                print("{:50} {:20} {} downloading...".format(package, version, heavy_ballot_x))
+                print(
+                    "{:50} {:20} {} downloading...".format(
+                        package, version, heavy_ballot_x
+                    )
+                )
                 download(url, filename)
 
     return data
