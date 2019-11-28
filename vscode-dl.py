@@ -20,6 +20,7 @@ import requests
 import requests_cache
 import yaml
 import shutil
+import urllib
 
 
 CPPTOOLS_KEY = "ms-vscode.cpptools"
@@ -62,7 +63,7 @@ def download(url, file):
     if isinstance(file, str):
         file = pathlib.Path(file)
 
-    file.parent.mkdir(exist_ok=True)
+    file.parent.mkdir(exist_ok=True, parents=True)
 
     with requests_cache.disabled():
 
@@ -481,89 +482,62 @@ def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run):
             new_row(data)
 
 
-def dl_code(dst_dir, json_data):
+def dl_code(dst_dir, channel="stable"):
     """
     download code for Linux from Microsoft debian-like repo
     """
 
-    repo = "http://packages.microsoft.com/repos/vscode"
-    url = f"{repo}/dists/stable/main/binary-amd64/Packages.bz2"
-    r = requests.get(url)
-    if r.status_code == 200:
-        data = bz2.decompress(r.content).decode("utf-8")
+    url = f"https://update.code.visualstudio.com/latest/linux-deb-x64/{channel}"
+    r = requests.get(url, allow_redirects=False)
+    if r.status_code != 302:
+        logging.error(f"cannot get {channel} channel")
+        return
 
-        packages = []
-        sect = {}
-        key, value = None, None
+    url = r.headers["Location"]
+    path = urllib.parse.urlsplit(url).path.split('/')
+    if len(path) != 4:
+        logging.error(f"cannot parse url {url}")
+        return
 
-        def _add_value():  # save key/value into current section
-            nonlocal key, value, sect
-            if key and value:
-                sect[key] = value
+    commit_id = path[2]
+    deb_filename = path[3]
+    package = "code"
+    filename = dst_dir / "code" / commit_id / deb_filename
+    version = re.search(r"_(.+)_", deb_filename).group(1)
 
-                if key == "version":
-                    # set up a list that should be in the same order as version numbers
-                    sect["_version"] = list(map(int, re.split(r"[.-]", value)))
+    if filename.is_file():
+        print("{:50} {:20} {}".format(package, version, check_mark))
+    else:
+        print("{:50} {:20} {} downloading...".format(package, version, heavy_ballot_x))
+        download(url, filename)
 
-                key = value = None
+    data = {}
+    data["version"] = version.split("-", 1)[0]
+    data["tag"] = version
+    data["channel "] = channel
+    data["commit_id"] = commit_id
+    data["url"] = str(filename.relative_to(dst_dir))
+    data["deb"] = deb_filename
+    data["server"] = []
 
-        def _add_sect():
-            nonlocal sect, packages
-            _add_value()
-            if len(sect) != 0:
-                packages.append(sect)
-                sect = {}  # start a new section
+    for arch in ["x64", "armhf", "alpine"]:
+        package = f"server-linux-{arch}"
+        url = f"https://update.code.visualstudio.com/commit:{commit_id}/{package}/{channel}"
+        r = requests.get(url, allow_redirects=False)
+        if r.status_code == 302:
+            url =     r.headers["Location"]
+            path = urllib.parse.urlsplit(url).path.split('/')
+            if len(path) != 4: continue
+            filename = dst_dir / "code" / commit_id / path[3]
+            data["server"].append(path[3])
 
-        for line in data.split("\n"):
-            if line == "":  # start a new section
-                _add_sect()
-            elif line[0] == " ":  # continue a key/value
-                if value is not None:
-                    value += line
-            else:  # start a new key/value
-                _add_value()
-                key, value = line.split(":", maxsplit=1)
-                key = key.lower()  # make key always lowercase
-                value = value.lstrip()
+            if filename.is_file():
+                print("{:50} {:20} {}".format(package, version, check_mark))
+            else:
+                print("{:50} {:20} {} downloading...".format(package, version, heavy_ballot_x))
+                download(url, filename)
 
-        _add_sect()  # flush section if any
-
-        packages.sort(key=lambda x: x["_version"], reverse=True)
-
-        # for package in ['code', 'code-insiders']:
-        for package in ["code"]:
-            latest = None
-            for p in packages:
-                if p["package"] == package:
-                    latest = p
-                    break
-
-            if latest:
-                filename = latest["filename"]
-                url = f"{repo}/{filename}"
-                deb_filename = os.path.basename(filename)
-                filename = dst_dir / "code" / deb_filename
-
-                if filename.is_file():
-                    print(
-                        "{:50} {:20} {}".format(
-                            latest["package"], latest["version"], check_mark
-                        )
-                    )
-                else:
-                    print(
-                        "{:50} {:20} {} downloading...".format(
-                            latest["package"], latest["version"], heavy_ballot_x
-                        )
-                    )
-                    download(url, filename)
-
-                if json_data:
-                    json_data[package] = {}
-                    json_data[package]["version"] = latest["version"].split("-", 1)[0]
-                    json_data[package]["tag"] = latest["version"]
-                    json_data[package]["url"] = str(filename.relative_to(dst_dir))
-                    json_data[package]["deb"] = deb_filename
+    return data
 
 
 def purge(path, keep):
@@ -701,8 +675,7 @@ def download_code_vsix(args):
     dst_dir = pathlib.Path(args.root)
 
     # download VSCode
-    dl_code(dst_dir, json_data)
-    print()
+    json_data["code"] = dl_code(dst_dir)
 
     # prepare the extension list
     extensions = list()
