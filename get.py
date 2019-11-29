@@ -209,8 +209,11 @@ def install_extension(url, vsix, dry_run):
         vsix_path = download_vsix(url, vsix)
         if vsix_path:
             cmd = "code --install-extension '{}'".format(vsix_path)
-            s = subprocess.check_output(cmd, shell=True)
-            print("\033[2m" + s.decode() + "\033[0m")
+            try:
+                s = subprocess.check_output(cmd, shell=True)
+                print("\033[2m" + s.decode() + "\033[0m")
+            except subprocess.CalledProcessError as e:
+                print("error:", e)
 
 
 def update_extensions(url, dry_run, platform):
@@ -218,10 +221,11 @@ def update_extensions(url, dry_run, platform):
     update installed extensions
     """
 
-    if os.getuid() == 0:
-        return
+    processed = set()
 
-    processed = []
+    if os.getuid() == 0:
+        print("error: cannot update extensions as root")
+        return processed
 
     # load database
     data = load_resource(url, "data.json")
@@ -247,7 +251,7 @@ def update_extensions(url, dry_run, platform):
             if key == "ms-vscode.cpptools" and platform is not None:
                 key = "ms-vscode.cpptools-" + platform
 
-            processed.append(key)
+            processed.add(key)
 
             colorized_key = COLOR_LIGHT_CYAN + key + COLOR_END
 
@@ -280,9 +284,13 @@ def update_extensions(url, dry_run, platform):
     return processed
 
 
-def install_extensions(url, dry_run, platform, processed, team):
+def install_extensions(url, dry_run, platform, extensions):
     """
     """
+
+    if os.getuid() == 0:
+        print("error: cannot install extensions as root")
+        return
 
     # load database
     data = load_resource(url, "data.json")
@@ -290,16 +298,13 @@ def install_extensions(url, dry_run, platform, processed, team):
         return
 
     data = data["extensions"]
-    extensions = load_resource(url, team + ".json")
-    if not extensions:
-        return
 
-    for key in set(extensions) - set(processed):
+    for key in extensions:
         if key not in data:
             if key + "-" + platform in data:
                 key = key + "-" + platform
             else:
-                print("error", key, platform)
+                print("error: extension not found {}".format(key))
                 continue
         vsix = data[key]["vsix"]
         version = data[key]["version"]
@@ -321,21 +326,24 @@ def main():
         "-n", "--dry-run", help="scan installed extensions", action="store_true"
     )
     parser.add_argument(
-        "-E", "--extensions", help="update extensions", action="store_true"
-    )
-    parser.add_argument(
-        "-C", "--code", help="install/update VSCode", action="store_true"
-    )
-    parser.add_argument(
-        "-F", "--favorites", help="install favorite extensions", action="store_true"
-    )
-    parser.add_argument(
         "-p",
         "--platform",
         help="override platform detection",
         choices=["linux", "win32", "osx", "linux32"],
     )
+    parser.add_argument(
+        "-C", "--code", help="install/update VSCode", action="store_true"
+    )
+    parser.add_argument(
+        "-E", "--extensions", help="update extensions", action="store_true"
+    )
+    parser.add_argument(
+        "-F", "--favorites", help="install favorite extensions", action="store_true"
+    )
     parser.add_argument("-t", "--team", help="name of extension list")
+    parser.add_argument(
+        "-i", "--install-extension", help="install extension", action="append"
+    )
     parser.add_argument("url", help="mirror url", nargs="?", default=".")
 
     args = parser.parse_args()
@@ -359,19 +367,35 @@ def main():
         print(args)
 
     # by default, process all actions
-    if not (args.code or args.extensions or args.favorites):
+    if not (args.code or args.extensions or args.favorites or args.install_extension):
         args.code = args.extensions = args.favorites = True
 
+    # install/update vscode
     if args.code:
         update_code(args.url, args.dry_run, args.platform)
+
+    # update extensions
     if args.extensions:
         processed = update_extensions(args.url, args.dry_run, args.platform)
     else:
-        processed = []
-    if args.favorites or args.team:
-        install_extensions(
-            args.url, args.dry_run, args.platform, processed, args.team or "team"
-        )
+        processed = set()
+
+    # install extensions
+    if args.favorites or args.team or args.install_extension:
+
+        if args.install_extension:
+            extensions = set(args.install_extension)
+        else:
+            extensions = set()
+
+        if args.favorites or args.team:
+            team = load_resource(args.url, (args.team or "team") + ".json")
+            if team:
+                extensions = extensions + set(team)
+
+        extensions = extensions - processed
+
+        install_extensions(args.url, args.dry_run, args.platform, extensions)
 
 
 if __name__ == "__main__":
