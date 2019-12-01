@@ -68,4 +68,6 @@ extensions:
 - stevejpurves.cucumber
 - Blodwynn.featurehighlight
 - vscoss.vscode-ansible
+- ms-vscode.cmake-tools
+
 
