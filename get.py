@@ -15,7 +15,12 @@ import shutil
 import requests
 import urllib
 import pathlib
+import re
 
+
+DEFAULT_URL = "."  # modified when tool is installed locally
+LOCAL_MODE = False  # True when tool is installed locally
+TOOL_VERSION = 10  # numerical value, strictly incremental
 
 check_mark = "\033[32m\N{heavy check mark}\033[0m"  # ✔
 heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
@@ -62,7 +67,7 @@ def download_vsix(url, name):
         print("cannot download {}: {}{}{}".format(name, COLOR_RED, e, COLOR_END))
 
 
-def load_resource(url, name):
+def load_resource(url, name, raw=False):
     """
     retrieve a local or remote JSON resource
     """
@@ -81,7 +86,10 @@ def load_resource(url, name):
 
         r = requests.get(uri)
         if r.status_code == 200:
-            data = r.json()
+            if raw:
+                data = r.content
+            else:
+                data = r.json()
         else:
             r.raise_for_status()
 
@@ -315,6 +323,49 @@ def install_extensions(url, dry_run, platform, extensions):
         install_extension(url, vsix, dry_run)
 
 
+def update_tool(url):
+    """ update local tool """
+
+    # get the remote version and source code
+    remote_code = load_resource(url, "get.py", raw=True)
+    if remote_code is None:
+        return
+    remote_code = remote_code.replace(
+        b'DEFAULT_URL = "."', b'DEFAULT_URL = "%s"' % (url.encode())
+    )
+    remote_code = remote_code.replace(b"LOCAL_MODE = False", b"LOCAL_MODE = True")
+    remote_version = int(re.search(rb"TOOL_VERSION = (\d+)", remote_code).group(1))
+
+    if LOCAL_MODE and (remote_version == TOOL_VERSION):
+        # local tool is up to date
+        # print("local tool is already in version {}".format(remote_version))
+        return
+
+    # install the tool in ~/.local/bin
+    local_path = pathlib.Path("~/.local/bin/code-tool").expanduser()
+
+    if local_path.exists():
+        local_code = local_path.open("rb").read()
+        local_version = int(re.search(rb"TOOL_VERSION = (\d+)", local_code).group(1))
+        if local_version == TOOL_VERSION:
+            print("local tool is already in version {}".format(remote_version))
+            return
+        action = "updated"
+    else:
+        action = "installed"
+
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    with local_path.open("wb") as f:
+        f.write(remote_code)
+    local_path.chmod(0o755)
+    print("code-tool has been {} into ~/.local/bin".format(action))
+    print("You may add this directory to your PATH and `rehash` (zsh users)")
+
+    if LOCAL_MODE:
+        print("Please re-run code-tool")
+        exit()
+
+
 def main():
     """ main function """
 
@@ -344,7 +395,7 @@ def main():
     parser.add_argument(
         "-i", "--install-extension", help="install extension", action="append"
     )
-    parser.add_argument("url", help="mirror url", nargs="?", default=".")
+    parser.add_argument("url", help="mirror url", nargs="?", default=DEFAULT_URL)
 
     args = parser.parse_args()
 
@@ -364,10 +415,17 @@ def main():
         parser.error("Could not detect a supported platform")
 
     if args.verbose:
+        print(TOOL_VERSION)
         print(args)
+
+    # install update tool
+    update_tool(args.url)
 
     # by default, process all actions
     if not (args.code or args.extensions or args.favorites or args.install_extension):
+        if LOCAL_MODE:
+            parser.print_help()
+            exit()
         args.code = args.extensions = args.favorites = True
 
     # install/update vscode
@@ -391,7 +449,7 @@ def main():
         if args.favorites or args.team:
             team = load_resource(args.url, (args.team or "team") + ".json")
             if team:
-                extensions = extensions + set(team)
+                extensions = extensions.union(set(team))
 
         extensions = extensions - processed
 
