@@ -16,11 +16,13 @@ import requests
 import urllib
 import pathlib
 import re
+import logging
+import textwrap
 
 
 DEFAULT_URL = "."  # modified when tool is installed locally
 LOCAL_MODE = False  # True when tool is installed locally
-TOOL_VERSION = 10  # numerical value, strictly incremental
+TOOL_VERSION = 14  # numerical value, strictly incremental
 
 check_mark = "\033[32m\N{heavy check mark}\033[0m"  # ✔
 heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
@@ -334,7 +336,11 @@ def update_tool(url):
         b'DEFAULT_URL = "."', b'DEFAULT_URL = "%s"' % (url.encode())
     )
     remote_code = remote_code.replace(b"LOCAL_MODE = False", b"LOCAL_MODE = True")
-    remote_version = int(re.search(rb"TOOL_VERSION = (\d+)", remote_code).group(1))
+    remote_version = re.search(rb"TOOL_VERSION = (\d+)", remote_code)
+    if remote_version is None:
+        logging.warning("Remote too old. Cannot update")
+        return
+    remote_version = int(remote_version.group(1))
 
     if LOCAL_MODE and (remote_version == TOOL_VERSION):
         # local tool is up to date
@@ -348,7 +354,7 @@ def update_tool(url):
         local_code = local_path.open("rb").read()
         local_version = int(re.search(rb"TOOL_VERSION = (\d+)", local_code).group(1))
         if local_version == TOOL_VERSION:
-            print("local tool is already in version {}".format(remote_version))
+            logging.debug("local tool is already in version {}".format(remote_version))
             return
         action = "updated"
     else:
@@ -365,6 +371,59 @@ def update_tool(url):
         print("Please re-run code-tool")
         exit()
 
+
+def list_extensions(url):
+    """ list available extensions """
+    data = load_resource(url, "data.json")
+    if not data:
+        print("Cannot retrieve data")
+        return
+
+    try:
+        cols = int(subprocess.check_output(["tput", "cols"]))
+    except Exception:
+        cols = 100
+
+    print("List of available extensions")
+    print()
+
+    if cols < 200:
+        color = ["\033[94m", "\033[33m"]
+        for extension in sorted(data["extensions"].keys()):
+            description = data["extensions"][extension]["description"]
+            print("    \033[92m" + extension + "\033[0m")
+            for c2 in textwrap.wrap(
+                description, initial_indent="        ", subsequent_indent="        ", width = cols -10
+            ):
+                print(c2)
+
+    elif False:
+        w1 = max(len(extension) for extension in data["extensions"].keys())
+        w2 = max(len(v["version"]) for v in data["extensions"].values())
+        fmt = ("{:%d} | {:>%d} | " % (w1, w2)).format
+        n = 0
+        color = ["\033[97m", "\033[94m"]
+        for extension, desc in data["extensions"].items():
+            n += 1
+            c1 = fmt(extension, desc["version"])
+            for c2 in textwrap.wrap(desc["description"], width=cols - w1 - w2 -8 ):
+                print(color[n % 2] + c1 + c2 + "\033[0m")
+                c1 = fmt("", "")
+    else:
+        w1 = max(len(extension) for extension in data["extensions"].keys())
+        fmt = ("{:%d} | " % (w1)).format
+
+        print(fmt("Tag") + "Description")
+        print(fmt("-" * w1) + "-" * 50)
+        n = 0
+        color = ["\033[97m", "\033[94m"]
+        for extension in sorted(data["extensions"].keys()):
+            description = data["extensions"][extension]["description"]
+            n += 1
+            c1 = fmt(extension)
+            for c2 in textwrap.wrap(description, width=cols - w1 - 4):
+                print(color[n % 2] + c1 + c2 + "\033[0m")
+                c1 = fmt("")
 
 def main():
     """ main function """
@@ -395,6 +454,9 @@ def main():
     parser.add_argument(
         "-i", "--install-extension", help="install extension", action="append"
     )
+    parser.add_argument(
+        "-l", "--list-extensions", help="list available extensions", action="store_true"
+    )
     parser.add_argument("url", help="mirror url", nargs="?", default=DEFAULT_URL)
 
     args = parser.parse_args()
@@ -415,11 +477,14 @@ def main():
         parser.error("Could not detect a supported platform")
 
     if args.verbose:
-        print(TOOL_VERSION)
         print(args)
 
     # install update tool
     update_tool(args.url)
+
+    if args.list_extensions:
+        list_extensions(args.url)
+        exit()
 
     # by default, process all actions
     if not (args.code or args.extensions or args.favorites or args.install_extension):
