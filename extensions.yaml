@@ -69,5 +69,5 @@ extensions:
 - Blodwynn.featurehighlight
 - vscoss.vscode-ansible
 - ms-vscode.cmake-tools
-
+- silverbulleters.gherkin-autocomplete
 
