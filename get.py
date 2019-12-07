@@ -22,7 +22,7 @@ import textwrap
 
 DEFAULT_URL = "."  # modified when tool is installed locally
 LOCAL_MODE = False  # True when tool is installed locally
-TOOL_VERSION = 14  # numerical value, strictly incremental
+TOOL_VERSION = 23  # numerical value, strictly incremental
 
 check_mark = "\033[32m\N{heavy check mark}\033[0m"  # ✔
 heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
@@ -77,8 +77,11 @@ def load_resource(url, name, raw=False):
     try:
         scheme, netloc, path, _, _ = urllib.parse.urlsplit(url, scheme="file")
         if scheme == "file":
-            with (pathlib.Path(path) / name).open("r") as f:
-                return json.load(f)
+            with (pathlib.Path(path) / name).open("rb") as f:
+                if raw:
+                    return f.read()
+                else:
+                    return json.load(f)
 
         if path.endswith("/"):
             path += name
@@ -107,7 +110,7 @@ def update_code(url, dry_run, platform):
     install or update Visual Studio Code
     """
 
-    print("installing or updating Visual Studio Code...")
+    print("\033[95mInstalling or updating Visual Studio Code...\033[0m")
 
     # load database
     data = load_resource(url, "data.json")
@@ -118,11 +121,7 @@ def update_code(url, dry_run, platform):
     colorized_key = COLOR_LIGHT_CYAN + "Visual Studio Code" + COLOR_END
 
     try:
-        cmd = subprocess.run(
-            ["dpkg-query", "--show", "code"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-        )
+        cmd = subprocess.run(["dpkg-query", "--show", "code"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         if cmd.returncode != 0 and cmd.returncode != 1:
             raise OSError(cmd.returncode)
 
@@ -133,7 +132,7 @@ def update_code(url, dry_run, platform):
     except Exception as e:
         print("not running Linux Debian/Ubuntu?")
         print("...don't know how to check Code version neither to install it.")
-        print(e)
+        print("\033[2m" + repr(e) + "\033[0m")
         return
 
     if version != code["tag"]:
@@ -167,12 +166,7 @@ def update_code(url, dry_run, platform):
                 subprocess.call(cmd)
 
                 # deactivate the source list
-                cmd = [
-                    "sed",
-                    "-i",
-                    "s/^deb/# deb/",
-                    "/etc/apt/sources.list.d/vscode.list",
-                ]
+                cmd = ["sed", "-i", "s/^deb/# deb/", "/etc/apt/sources.list.d/vscode.list"]
                 if os.getuid() != 0:
                     cmd.insert(0, "sudo")
                 subprocess.call(cmd, stderr=subprocess.DEVNULL)
@@ -249,7 +243,7 @@ def update_extensions(url, dry_run, platform):
             extensions[key.lower()] = extensions[key]
 
     # get installed extensions
-    print("fetching installed extensions...")
+    print("\033[95mFetching installed extensions...\033[0m")
     s = subprocess.check_output("code --list-extensions --show-versions", shell=True)
     installed = sorted(set(s.decode().split()))
 
@@ -268,16 +262,10 @@ def update_extensions(url, dry_run, platform):
             extension = extensions.get(key.lower())
 
             if extension is None:
-                print(
-                    "extension not found: {} {}".format(colorized_key, heavy_ballot_x)
-                )
+                print("extension not found: {} {}".format(colorized_key, heavy_ballot_x))
 
             elif extension["version"] == version:
-                print(
-                    "extension up to date: {} ({}) {}".format(
-                        colorized_key, version, check_mark
-                    )
-                )
+                print("extension up to date: {} ({}) {}".format(colorized_key, version, check_mark))
 
             else:
                 vsix = extension["vsix"]
@@ -319,22 +307,21 @@ def install_extensions(url, dry_run, platform, extensions):
         vsix = data[key]["vsix"]
         version = data[key]["version"]
         colorized_key = COLOR_LIGHT_CYAN + key + COLOR_END
-        print(
-            "installing: {} version {} {}".format(colorized_key, version, hot_beverage)
-        )
+        print("installing: {} version {} {}".format(colorized_key, version, hot_beverage))
         install_extension(url, vsix, dry_run)
 
 
 def update_tool(url):
     """ update local tool """
 
+    print("\033[95mInstalling or updating companion tool...\033[0m")
+
     # get the remote version and source code
     remote_code = load_resource(url, "get.py", raw=True)
     if remote_code is None:
+        print("?")
         return
-    remote_code = remote_code.replace(
-        b'DEFAULT_URL = "."', b'DEFAULT_URL = "%s"' % (url.encode())
-    )
+    remote_code = remote_code.replace(b'DEFAULT_URL = "."', b'DEFAULT_URL = "%s"' % (url.encode()))
     remote_code = remote_code.replace(b"LOCAL_MODE = False", b"LOCAL_MODE = True")
     remote_version = re.search(rb"TOOL_VERSION = (\d+)", remote_code)
     if remote_version is None:
@@ -342,23 +329,26 @@ def update_tool(url):
         return
     remote_version = int(remote_version.group(1))
 
-    if LOCAL_MODE and (remote_version == TOOL_VERSION):
-        # local tool is up to date
-        # print("local tool is already in version {}".format(remote_version))
-        return
-
-    # install the tool in ~/.local/bin
     local_path = pathlib.Path("~/.local/bin/code-tool").expanduser()
 
-    if local_path.exists():
-        local_code = local_path.open("rb").read()
-        local_version = int(re.search(rb"TOOL_VERSION = (\d+)", local_code).group(1))
-        if local_version == TOOL_VERSION:
-            logging.debug("local tool is already in version {}".format(remote_version))
+    if LOCAL_MODE:
+        if remote_version == TOOL_VERSION:
+            # local tool is up to date
+            # print("local tool is already in version {}".format(remote_version))
             return
-        action = "updated"
+        else:
+            action = "updated"
     else:
-        action = "installed"
+        # install the tool in ~/.local/bin
+        if local_path.exists():
+            local_code = local_path.open("rb").read()
+            local_version = int(re.search(rb"TOOL_VERSION = (\d+)", local_code).group(1))
+            if local_version == TOOL_VERSION:
+                logging.debug("local tool is already in version {}".format(remote_version))
+                return
+            action = "updated"
+        else:
+            action = "installed"
 
     local_path.parent.mkdir(parents=True, exist_ok=True)
     with local_path.open("wb") as f:
@@ -393,7 +383,7 @@ def list_extensions(url):
             description = data["extensions"][extension]["description"]
             print("    \033[92m" + extension + "\033[0m")
             for c2 in textwrap.wrap(
-                description, initial_indent="        ", subsequent_indent="        ", width = cols -10
+                description, initial_indent="        ", subsequent_indent="        ", width=cols - 10
             ):
                 print(c2)
 
@@ -406,7 +396,7 @@ def list_extensions(url):
         for extension, desc in data["extensions"].items():
             n += 1
             c1 = fmt(extension, desc["version"])
-            for c2 in textwrap.wrap(desc["description"], width=cols - w1 - w2 -8 ):
+            for c2 in textwrap.wrap(desc["description"], width=cols - w1 - w2 - 8):
                 print(color[n % 2] + c1 + c2 + "\033[0m")
                 c1 = fmt("", "")
     else:
@@ -425,38 +415,24 @@ def list_extensions(url):
                 print(color[n % 2] + c1 + c2 + "\033[0m")
                 c1 = fmt("")
 
+
 def main():
     """ main function """
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--verbose", help="increase verbosity", action="store_true")
+    parser.add_argument("-V", "--version", help="show version and url", action="store_true")
+    parser.add_argument("-n", "--dry-run", help="scan installed extensions", action="store_true")
     parser.add_argument(
-        "-v", "--verbose", help="increase verbosity", action="store_true"
+        "-p", "--platform", help="override platform detection", choices=["linux", "win32", "osx", "linux32"]
     )
-    parser.add_argument(
-        "-n", "--dry-run", help="scan installed extensions", action="store_true"
-    )
-    parser.add_argument(
-        "-p",
-        "--platform",
-        help="override platform detection",
-        choices=["linux", "win32", "osx", "linux32"],
-    )
-    parser.add_argument(
-        "-C", "--code", help="install/update VSCode", action="store_true"
-    )
-    parser.add_argument(
-        "-E", "--extensions", help="update extensions", action="store_true"
-    )
-    parser.add_argument(
-        "-F", "--favorites", help="install favorite extensions", action="store_true"
-    )
+    parser.add_argument("-u", "--update", help="do updates", action="store_true")
+    parser.add_argument("-C", "--code", help="install/update VSCode", action="store_true")
+    parser.add_argument("-E", "--extensions", help="update extensions", action="store_true")
+    parser.add_argument("-F", "--favorites", help="install favorite extensions", action="store_true")
     parser.add_argument("-t", "--team", help="name of extension list")
-    parser.add_argument(
-        "-i", "--install-extension", help="install extension", action="append"
-    )
-    parser.add_argument(
-        "-l", "--list-extensions", help="list available extensions", action="store_true"
-    )
+    parser.add_argument("-i", "--install-extension", help="install extension", action="append")
+    parser.add_argument("-l", "--list-extensions", help="list available extensions", action="store_true")
     parser.add_argument("url", help="mirror url", nargs="?", default=DEFAULT_URL)
 
     args = parser.parse_args()
@@ -476,8 +452,24 @@ def main():
     if args.platform is None:
         parser.error("Could not detect a supported platform")
 
+    if args.url == ".":
+        args.url = pathlib.Path(".").absolute().as_posix()
+
     if args.verbose:
         print(args)
+
+    if args.verbose or args.version:
+        print("Version: {}".format(TOOL_VERSION))
+        print("Mode: {}".format(["remote", "remote"][LOCAL_MODE]))
+        print("URL: {}".format(DEFAULT_URL))
+
+        data = load_resource(args.url, "data.json")
+        if data:
+            print()
+            print("code: {} {} {}".format(data["code"]["version"], data["code"]["channel"], data["code"]["commit_id"]))
+            print("extensions: {}".format(len(data["extensions"])))
+
+        exit()
 
     # install update tool
     update_tool(args.url)
@@ -485,6 +477,10 @@ def main():
     if args.list_extensions:
         list_extensions(args.url)
         exit()
+
+    if args.update:
+        args.code = True
+        args.extensions = True
 
     # by default, process all actions
     if not (args.code or args.extensions or args.favorites or args.install_extension):
@@ -534,9 +530,7 @@ if __name__ == "__main__":
         ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
 
         mode = ctypes.wintypes.DWORD()
-        if kernel32.GetConsoleMode(
-            kernel32.GetStdHandle(STD_OUTPUT_HANDLE), ctypes.byref(mode)
-        ):
+        if kernel32.GetConsoleMode(kernel32.GetStdHandle(STD_OUTPUT_HANDLE), ctypes.byref(mode)):
             mode = mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING
             kernel32.SetConsoleMode(kernel32.GetStdHandle(STD_OUTPUT_HANDLE), mode)
 

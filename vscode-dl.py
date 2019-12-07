@@ -329,6 +329,9 @@ def dl_go_packages(dst_dir, vsix):
     download Go extension tools
     """
 
+    if "NO_GO" in os.environ:
+        return
+
     # set the GOPATH to download tools in the mirror directory
     go_path = (dst_dir / "go").absolute()
     go_path.mkdir(parents=True, exist_ok=True)
@@ -502,7 +505,7 @@ def dl_code(dst_dir, channel="stable", revision="latest"):
     data = {}
     data["version"] = version
     data["tag"] = tag
-    data["channel "] = channel
+    data["channel"] = channel
     data["commit_id"] = commit_id
     data["url"] = str(filename.relative_to(dst_dir))
     data["deb"] = deb_filename
