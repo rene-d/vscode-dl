@@ -324,9 +324,9 @@ def process_cpptools(dst_dir, json_data, e):
             }
 
 
-def dl_go_packages(dst_dir, vsix):
+def dl_go_packages(dst_dir, vsix, json_data):
     """
-    download Go extension tools
+    download the Go extension tools
     """
 
     if "NO_GO" in os.environ:
@@ -358,6 +358,8 @@ def dl_go_packages(dst_dir, vsix):
         cmd = ["go", "get", "-u", "-d", tool["importPath"]]
         rc = subprocess.call(cmd, env=env, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         print([heavy_ballot_x, check_mark][rc == 0])
+
+    json_data["go-tools"] = tools
 
 
 def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run):
@@ -437,7 +439,7 @@ def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run):
                 download(url, icon)
 
         if key == "ms-vscode.Go":
-            dl_go_packages(dst_dir, vsix)
+            dl_go_packages(dst_dir, vsix, json_data)
 
     # write the markdown catalog file
     with open(dst_dir / "extensions.md", "w") as f:

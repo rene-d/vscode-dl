@@ -220,6 +220,41 @@ def install_extension(url, vsix, dry_run):
                 print("error:", e)
 
 
+def print_cmd(cmd):
+    """
+    print a command line
+    """
+    s = " ".join(a if a.find(" ") == -1 else '"' + a + '"' for a in cmd)
+    print("\033[2mexec: {}\033[0m".format(s))
+
+
+def update_go_tools(url, dry_run, tools):
+    """
+    mirror and build Go tools
+    """
+    print("\033[95mSyncing Go tools...\033[0m")
+
+    if not url.startswith("http") and not url.startswith("ftp"):
+        url = "file://" + url
+
+    cmd = ["lftp", "-c", "open {} ; mirror go {}/".format(url, os.environ["HOME"])]
+    if not dry_run:
+        subprocess.call(cmd)
+    else:
+        print_cmd(cmd)
+
+    env = os.environ.copy()
+    env["GOPATH"] = pathlib.Path("~/go").expanduser().as_posix()
+
+    for tool in tools.values():
+        cmd = ["go", "get", tool["importPath"]]
+        if not dry_run:
+            print("installing: \033[1;36m{}\033[0m".format(tool["name"]))
+            subprocess.call(cmd, env=env)
+        else:
+            print_cmd(cmd)
+
+
 def update_extensions(url, dry_run, platform):
     """
     update installed extensions
@@ -246,6 +281,8 @@ def update_extensions(url, dry_run, platform):
     print("\033[95mFetching installed extensions...\033[0m")
     s = subprocess.check_output("code --list-extensions --show-versions", shell=True)
     installed = sorted(set(s.decode().split()))
+
+    defer = []
 
     # do update
     for i in installed:
@@ -276,8 +313,14 @@ def update_extensions(url, dry_run, platform):
                 )
                 install_extension(url, vsix, dry_run)
 
+            if key == "ms-vscode.Go":
+                defer.append(lambda: update_go_tools(url, dry_run, data["go-tools"]))
+
         except Exception as e:
             print("error for {}: {}{}{}".format(i, COLOR_RED, e, COLOR_END))
+
+    for a in defer:
+        a()
 
     return processed
 
