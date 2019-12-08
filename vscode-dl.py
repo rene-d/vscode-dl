@@ -117,7 +117,7 @@ def is_engine_valid(engine, extension):
     Nota: the sematic follows https://semver.org
     """
 
-    if engine == "*":
+    if engine == "*" or extension == "*":
         return True
     if extension[0] != "^":
         # if version doesn't begin with ^, I don't know how to handle it
@@ -180,7 +180,7 @@ def get_extensions(extensions, vscode_engine):
                 logging.warning(
                     "KO: '%s | %s | %s | %s",
                     e["displayName"],
-                    e["shortDescription"],
+                    e.get("shortDescription", e["displayName"]),
                     e["publisher"]["displayName"],
                     e["versions"][0]["version"],
                 )
@@ -192,7 +192,7 @@ def get_extensions(extensions, vscode_engine):
             logging.debug(
                 "OK: '%s | %s | %s | %s",
                 e["displayName"],
-                e["shortDescription"],
+                e.get("shortDescription", e["displayName"]),
                 e["publisher"]["displayName"],
                 e["versions"][0]["version"],
             )
@@ -228,7 +228,7 @@ def get_extensions(extensions, vscode_engine):
         for e in res["results"][0]["extensions"]:
 
             logging.debug(
-                "analyze %s | %s | %s", e["displayName"], e["shortDescription"], e["publisher"]["displayName"]
+                "analyze %s | %s | %s", e["displayName"], e.get("shortDescription", e["displayName"]), e["publisher"]["displayName"]
             )
 
             # find the greatest version compatible with our vscode engine
@@ -316,7 +316,7 @@ def process_cpptools(dst_dir, json_data, e):
                 "url": "https://marketplace.visualstudio.com/items?itemName=" + key,
                 "icon": "icons/" + (key + ".png"),
                 "iconAsset": f'{e["versions"][0]["assetUri"]}/Microsoft.VisualStudio.Services.Icons.Small',
-                "description": e["shortDescription"],
+                "description": e.get("shortDescription", e["displayName"]),
                 "author": e["publisher"]["displayName"],
                 "authorUrl": "https://marketplace.visualstudio.com/publishers/" + e["publisher"]["publisherName"],
                 "lastUpdated": parse_date(asset["updated_at"]),
@@ -403,7 +403,7 @@ def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run):
                 "icon": "icons/" + (key + ".png"),
                 "iconAsset": f'{e["versions"][0]["assetUri"]}/Microsoft.VisualStudio.Services.Icons.Small',
                 "name": e["displayName"],
-                "description": e["shortDescription"],
+                "description": e.get("shortDescription", e["displayName"]),
                 "author": e["publisher"]["displayName"],
                 "authorUrl": "https://marketplace.visualstudio.com/publishers/" + e["publisher"]["publisherName"],
                 "lastUpdated": parse_date(e["versions"][0]["lastUpdated"]),
