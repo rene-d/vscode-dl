@@ -5,6 +5,7 @@
 install or updates Visual Studio Code and its extensions
 """
 
+import sys
 import argparse
 import json
 import os
@@ -19,20 +20,22 @@ import re
 import logging
 import textwrap
 
+################################
 
 DEFAULT_URL = "."  # modified when tool is installed locally
 LOCAL_MODE = False  # True when tool is installed locally
-TOOL_VERSION = 23  # numerical value, strictly incremental
+TOOL_VERSION = 25  # numerical value, strictly incremental
 
-check_mark = "\033[32m\N{heavy check mark}\033[0m"  # ✔
-heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
-hot_beverage = "\033[1;33m\N{hot beverage}\033[0m"  # ♨
+################################
+
+CHECK_MARK = "\033[32m\N{heavy check mark}\033[0m"  # ✔
+HEAVY_BALLOT_X = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
+HOT_BEVERAGE = "\033[1;33m\N{hot beverage}\033[0m"  # ♨
 
 COLOR_RED = "\033[0;31m"
 COLOR_GREEN = "\033[0;32m"
 COLOR_LIGHT_CYAN = "\033[1;36m"
 COLOR_END = "\033[0m"
-
 
 # keep a reference to the temporaries files
 last_temporary_file = []
@@ -105,17 +108,14 @@ def load_resource(url, name, raw=False):
     return data
 
 
-def update_code(url, dry_run, platform):
+def update_code(url, dry_run, platform, data):
     """
     install or update Visual Studio Code
     """
 
     print("\033[95mInstalling or updating Visual Studio Code...\033[0m")
 
-    # load database
-    data = load_resource(url, "data.json")
-    if not data:
-        return
+    # get code database
     code = data["code"]
 
     colorized_key = COLOR_LIGHT_CYAN + "Visual Studio Code" + COLOR_END
@@ -143,7 +143,7 @@ def update_code(url, dry_run, platform):
                     colorized_key,
                     COLOR_GREEN + code["version"] + COLOR_END,
                     COLOR_GREEN + code["tag"] + COLOR_END,
-                    hot_beverage,
+                    HOT_BEVERAGE,
                 )
             )
         else:
@@ -153,7 +153,7 @@ def update_code(url, dry_run, platform):
                     COLOR_RED + version + COLOR_END,
                     COLOR_GREEN + code["version"] + COLOR_END,
                     COLOR_GREEN + code["tag"] + COLOR_END,
-                    hot_beverage,
+                    HOT_BEVERAGE,
                 )
             )
         if not dry_run:
@@ -196,7 +196,7 @@ def update_code(url, dry_run, platform):
                 colorized_key,
                 COLOR_GREEN + code["version"] + COLOR_END,
                 COLOR_GREEN + code["tag"] + COLOR_END,
-                check_mark,
+                CHECK_MARK,
             )
         )
 
@@ -255,7 +255,7 @@ def update_go_tools(url, dry_run, tools):
             print_cmd(cmd)
 
 
-def update_extensions(url, dry_run, platform):
+def update_extensions(url, dry_run, platform, data):
     """
     update installed extensions
     """
@@ -266,10 +266,7 @@ def update_extensions(url, dry_run, platform):
         print("error: cannot update extensions as root")
         return processed
 
-    # load database
-    data = load_resource(url, "data.json")
-    if not data:
-        return processed
+    # get extension database
     extensions = data["extensions"]
 
     # add keys in lowercase
@@ -299,16 +296,17 @@ def update_extensions(url, dry_run, platform):
             extension = extensions.get(key.lower())
 
             if extension is None:
-                print("extension not found: {} {}".format(colorized_key, heavy_ballot_x))
+                print("extension not found: {} {}".format(colorized_key, HEAVY_BALLOT_X))
+                continue
 
-            elif extension["version"] == version:
-                print("extension up to date: {} ({}) {}".format(colorized_key, version, check_mark))
+            if extension["version"] == version:
+                print("extension up to date: {} ({}) {}".format(colorized_key, version, CHECK_MARK))
 
             else:
                 vsix = extension["vsix"]
                 print(
                     "updating: {} from version {} to version {} {}".format(
-                        colorized_key, version, extension["version"], hot_beverage
+                        colorized_key, version, extension["version"], HOT_BEVERAGE
                     )
                 )
                 install_extension(url, vsix, dry_run)
@@ -317,25 +315,20 @@ def update_extensions(url, dry_run, platform):
                 defer.append(lambda: update_go_tools(url, dry_run, data["go-tools"]))
 
         except Exception as e:
-            print("error for {}: {}{}{}".format(i, COLOR_RED, e, COLOR_END))
+            logging.error("error for {}: {}{}{}".format(i, COLOR_RED, e, COLOR_END))
 
-    for a in defer:
-        a()
+    for action in defer:
+        action()
 
     return processed
 
 
-def install_extensions(url, dry_run, platform, extensions):
+def install_extensions(url, dry_run, platform, extensions, data):
     """
     """
 
     if os.getuid() == 0:
         print("error: cannot install extensions as root")
-        return
-
-    # load database
-    data = load_resource(url, "data.json")
-    if not data:
         return
 
     data = data["extensions"]
@@ -350,11 +343,11 @@ def install_extensions(url, dry_run, platform, extensions):
         vsix = data[key]["vsix"]
         version = data[key]["version"]
         colorized_key = COLOR_LIGHT_CYAN + key + COLOR_END
-        print("installing: {} version {} {}".format(colorized_key, version, hot_beverage))
+        print("installing: {} version {} {}".format(colorized_key, version, HOT_BEVERAGE))
         install_extension(url, vsix, dry_run)
 
 
-def update_tool(url):
+def update_tool(url, data):
     """ update local tool """
 
     print("\033[95mInstalling or updating companion tool...\033[0m")
@@ -405,12 +398,8 @@ def update_tool(url):
         exit()
 
 
-def list_extensions(url):
+def list_extensions(url, data, verbose):
     """ list available extensions """
-    data = load_resource(url, "data.json")
-    if not data:
-        print("Cannot retrieve data")
-        return
 
     try:
         cols = int(subprocess.check_output(["tput", "cols"]))
@@ -462,6 +451,13 @@ def list_extensions(url):
 def main():
     """ main function """
 
+    # logger options
+    if sys.stdout.isatty():
+        logging.addLevelName(logging.DEBUG, "\033[0;32m%s\033[0m" % logging.getLevelName(logging.DEBUG))
+        logging.addLevelName(logging.INFO, "\033[1;33m%s\033[0m" % logging.getLevelName(logging.INFO))
+        logging.addLevelName(logging.WARNING, "\033[1;35m%s\033[0m" % logging.getLevelName(logging.WARNING))
+        logging.addLevelName(logging.ERROR, "\033[1;41m%s\033[0m" % logging.getLevelName(logging.ERROR))
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", help="increase verbosity", action="store_true")
     parser.add_argument("-V", "--version", help="show version and url", action="store_true")
@@ -477,8 +473,14 @@ def main():
     parser.add_argument("-i", "--install-extension", help="install extension", action="append")
     parser.add_argument("-l", "--list-extensions", help="list available extensions", action="store_true")
     parser.add_argument("url", help="mirror url", nargs="?", default=DEFAULT_URL)
+    parser.add_argument('--mirror-url', action="store_true", help=argparse.SUPPRESS, dest="mirror_url")
 
     args = parser.parse_args()
+
+    # hidden option to get the mirror URL
+    if args.mirror_url:
+        print(DEFAULT_URL)
+        exit(0)
 
     if args.platform is None:
         if args.verbose:
@@ -499,9 +501,10 @@ def main():
         args.url = pathlib.Path(".").absolute().as_posix()
 
     if args.verbose:
-        print(args)
+        logging.basicConfig(format="%(asctime)s:%(levelname)s:%(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
+        logging.debug("args {}".format(args))
 
-    if args.verbose or args.version:
+    if args.version:
         print("Version: {}".format(TOOL_VERSION))
         print("Mode: {}".format(["remote", "remote"][LOCAL_MODE]))
         print("URL: {}".format(DEFAULT_URL))
@@ -514,11 +517,16 @@ def main():
 
         exit()
 
+    data = load_resource(args.url, "data.json")
+    if not data:
+        logging.error("Cannot retrieve data")
+        exit(2)
+
     # install update tool
-    update_tool(args.url)
+    update_tool(args.url, data)
 
     if args.list_extensions:
-        list_extensions(args.url)
+        list_extensions(args.url, data, args.verbose)
         exit()
 
     if args.update:
@@ -534,11 +542,11 @@ def main():
 
     # install/update vscode
     if args.code:
-        update_code(args.url, args.dry_run, args.platform)
+        update_code(args.url, args.dry_run, args.platform, data)
 
     # update extensions
     if args.extensions:
-        processed = update_extensions(args.url, args.dry_run, args.platform)
+        processed = update_extensions(args.url, args.dry_run, args.platform, data)
     else:
         processed = set()
 
@@ -557,10 +565,11 @@ def main():
 
         extensions = extensions - processed
 
-        install_extensions(args.url, args.dry_run, args.platform, extensions)
+        install_extensions(args.url, args.dry_run, args.platform, extensions, data)
 
 
 if __name__ == "__main__":
+
     from platform import system as platform_system
 
     if platform_system() == "Windows":

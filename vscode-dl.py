@@ -29,8 +29,8 @@ CPPTOOLS_PLATFORMS = ["linux", "win32", "osx", "linux32"]
 
 
 # be a little more visual like npm ;-)
-check_mark = "\033[32m\N{check mark}\033[0m"  # ✔
-heavy_ballot_x = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
+CHECK_MARK = "\033[32m\N{check mark}\033[0m"  # ✔
+HEAVY_BALLOT_X = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
 
 
 # logger options
@@ -88,7 +88,7 @@ def download(url, file):
                 return True
 
             else:
-                print(heavy_ballot_x, r.status_code, url)
+                print(HEAVY_BALLOT_X, r.status_code, url)
                 return False
 
 
@@ -357,7 +357,7 @@ def dl_go_packages(dst_dir, vsix, json_data):
         sys.stdout.flush()
         cmd = ["go", "get", "-u", "-d", tool["importPath"]]
         rc = subprocess.call(cmd, env=env, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        print([heavy_ballot_x, check_mark][rc == 0])
+        print([HEAVY_BALLOT_X, CHECK_MARK][rc == 0])
 
     json_data["go-tools"] = tools
 
@@ -421,11 +421,11 @@ def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run):
         if not vsix.is_file():
             if icon.is_file():
                 icon.unlink()
-            print("{:20} {:35} {:10} {} downloading...".format(*key.split("."), data["version"], heavy_ballot_x))
+            print("{:20} {:35} {:10} {} downloading...".format(*key.split("."), data["version"], HEAVY_BALLOT_X))
             if not dry_run:
                 download(data["vsixAsset"], vsix)
         else:
-            print("{:20} {:35} {:10} {}".format(*key.split("."), data["version"], check_mark))
+            print("{:20} {:35} {:10} {}".format(*key.split("."), data["version"], CHECK_MARK))
 
         # download icon
         if not icon.is_file():
@@ -489,9 +489,9 @@ def dl_code(dst_dir, channel="stable", revision="latest"):
     version = tag.split("-", 1)[0]
 
     if filename.is_file():
-        print("{:50} {:20} {}".format(package, tag, check_mark))
+        print("{:50} {:20} {}".format(package, tag, CHECK_MARK))
     else:
-        print("{:50} {:20} {} downloading...".format(package, tag, heavy_ballot_x))
+        print("{:50} {:20} {} downloading...".format(package, tag, HEAVY_BALLOT_X))
         download(url, filename)
 
         d = filename.parent.parent / revision
@@ -526,9 +526,9 @@ def dl_code(dst_dir, channel="stable", revision="latest"):
             data["server"].append(path[3])
 
             if filename.is_file():
-                print("{:50} {:20} {}".format(package, version, check_mark))
+                print("{:50} {:20} {}".format(package, version, CHECK_MARK))
             else:
-                print("{:50} {:20} {} downloading...".format(package, version, heavy_ballot_x))
+                print("{:50} {:20} {} downloading...".format(package, version, HEAVY_BALLOT_X))
                 download(url, filename)
 
     return data
