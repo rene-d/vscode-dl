@@ -1,0 +1,38 @@
+version: "3"
+services:
+
+  # web server
+  mirror:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    networks:
+      - fake
+    volumes:
+      - mirror:/mirror:ro
+      - ./mirror/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+  # downloader
+  sync:
+    build:
+      context: ..
+    volumes:
+      - mirror:/app/web
+      - ./test.yaml:/app/extensions.yaml
+
+  # test client
+  client:
+    build: client/
+    container_name: vscode_dl_test
+    tty: true
+    networks:
+      - fake
+    depends_on:
+      - mirror
+
+networks:
+  fake:
+    driver: bridge
+
+volumes:
+  mirror:

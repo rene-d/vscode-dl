@@ -24,9 +24,13 @@ import textwrap
 
 DEFAULT_URL = "."  # modified when tool is installed locally
 LOCAL_MODE = False  # True when tool is installed locally
-TOOL_VERSION = 25  # numerical value, strictly incremental
+TOOL_VERSION = 32  # numerical value, strictly incremental
 
 ################################
+
+if sys.stdout.encoding != "UTF-8":
+    sys.stdout = open(sys.stdout.fileno(), mode="w", encoding="utf8", buffering=1)
+    sys.stderr = open(sys.stderr.fileno(), mode="w", encoding="utf8", buffering=1)
 
 CHECK_MARK = "\033[32m\N{heavy check mark}\033[0m"  # ✔
 HEAVY_BALLOT_X = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
@@ -201,25 +205,6 @@ def update_code(url, dry_run, platform, data):
         )
 
 
-def install_extension(url, vsix, dry_run):
-    """
-    install an extension
-    """
-
-    if dry_run:
-        cmd = "code --install-extension '{}'".format(pathlib.Path(vsix).name)
-        print(COLOR_GREEN + cmd + COLOR_END)
-    else:
-        vsix_path = download_vsix(url, vsix)
-        if vsix_path:
-            cmd = "code --install-extension '{}'".format(vsix_path)
-            try:
-                s = subprocess.check_output(cmd, shell=True)
-                print("\033[2m" + s.decode() + "\033[0m")
-            except subprocess.CalledProcessError as e:
-                print("error:", e)
-
-
 def print_cmd(cmd):
     """
     print a command line
@@ -237,7 +222,7 @@ def update_go_tools(url, dry_run, tools):
     if not url.startswith("http") and not url.startswith("ftp"):
         url = "file://" + url
 
-    cmd = ["lftp", "-c", "open {} ; mirror go {}/".format(url, os.environ["HOME"])]
+    cmd = ["lftp", "-c", "open {} ; set mirror:parallel-directories no ; mirror go {}/".format(url, os.environ["HOME"])]
     if not dry_run:
         subprocess.call(cmd)
     else:
@@ -253,6 +238,25 @@ def update_go_tools(url, dry_run, tools):
             subprocess.call(cmd, env=env)
         else:
             print_cmd(cmd)
+
+
+def install_extension(url, vsix, dry_run):
+    """
+    install an extension
+    """
+
+    if dry_run:
+        cmd = "code --install-extension '{}'".format(pathlib.Path(vsix).name)
+        print(COLOR_GREEN + cmd + COLOR_END)
+    else:
+        vsix_path = download_vsix(url, vsix)
+        if vsix_path:
+            cmd = "code --install-extension '{}'".format(vsix_path)
+            try:
+                s = subprocess.check_output(cmd, shell=True)
+                print("\033[2m" + s.decode() + "\033[0m")
+            except subprocess.CalledProcessError as e:
+                print("error:", e)
 
 
 def update_extensions(url, dry_run, platform, data):
@@ -323,7 +327,7 @@ def update_extensions(url, dry_run, platform, data):
     return processed
 
 
-def install_extensions(url, dry_run, platform, extensions, data):
+def install_extensions(url, dry_run, platform, extensions_list, data):
     """
     """
 
@@ -331,37 +335,49 @@ def install_extensions(url, dry_run, platform, extensions, data):
         print("error: cannot install extensions as root")
         return
 
-    data = data["extensions"]
+    extensions = data["extensions"]
 
-    for key in extensions:
-        if key not in data:
-            if key + "-" + platform in data:
+    defer = []
+
+    for key in extensions_list:
+        if key not in extensions:
+            if key + "-" + platform in extensions:
                 key = key + "-" + platform
             else:
                 print("error: extension not found {}".format(key))
                 continue
-        vsix = data[key]["vsix"]
-        version = data[key]["version"]
+        vsix = extensions[key]["vsix"]
+        version = extensions[key]["version"]
         colorized_key = COLOR_LIGHT_CYAN + key + COLOR_END
         print("installing: {} version {} {}".format(colorized_key, version, HOT_BEVERAGE))
         install_extension(url, vsix, dry_run)
+
+        if key == "ms-vscode.Go":
+            defer.append(lambda: update_go_tools(url, dry_run, data["go-tools"]))
+
+    for action in defer:
+        action()
 
 
 def update_tool(url, data):
     """ update local tool """
 
     print("\033[95mInstalling or updating companion tool...\033[0m")
+    logging.debug("url %s", url)
+    logging.debug("DEFAULT_URL %s", DEFAULT_URL)
+    logging.debug("LOCAL_MODE %s", LOCAL_MODE)
 
     # get the remote version and source code
     remote_code = load_resource(url, "get.py", raw=True)
     if remote_code is None:
-        print("?")
         return
-    remote_code = remote_code.replace(b'DEFAULT_URL = "."', b'DEFAULT_URL = "%s"' % (url.encode()))
-    remote_code = remote_code.replace(b"LOCAL_MODE = False", b"LOCAL_MODE = True")
+
+    remote_code = remote_code.replace(b'\nDEFAULT_URL = "."', b'\nDEFAULT_URL = "%s"' % (url.encode()), 1)
+    remote_code = remote_code.replace(b"\nLOCAL_MODE = False", b"\nLOCAL_MODE = True", 1)
+
     remote_version = re.search(rb"TOOL_VERSION = (\d+)", remote_code)
     if remote_version is None:
-        logging.warning("Remote too old. Cannot update")
+        logging.warning("Remote script too old. Cannot update.")
         return
     remote_version = int(remote_version.group(1))
 
@@ -473,7 +489,7 @@ def main():
     parser.add_argument("-i", "--install-extension", help="install extension", action="append")
     parser.add_argument("-l", "--list-extensions", help="list available extensions", action="store_true")
     parser.add_argument("url", help="mirror url", nargs="?", default=DEFAULT_URL)
-    parser.add_argument('--mirror-url', action="store_true", help=argparse.SUPPRESS, dest="mirror_url")
+    parser.add_argument("--mirror-url", action="store_true", help=argparse.SUPPRESS, dest="mirror_url")
 
     args = parser.parse_args()
 

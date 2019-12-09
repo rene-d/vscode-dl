@@ -1,0 +1,7 @@
+# configuration file for vscode-dl.py
+
+web_root: web
+
+extensions:
+- ms-python.python
+  # - ms-vscode.Go

@@ -23,15 +23,16 @@ import shutil
 import urllib
 import zipfile
 
+################################
 
 CPPTOOLS_KEY = "ms-vscode.cpptools"
 CPPTOOLS_PLATFORMS = ["linux", "win32", "osx", "linux32"]
 
+################################
 
-# be a little more visual like npm ;-)
-CHECK_MARK = "\033[32m\N{check mark}\033[0m"  # ✔
-HEAVY_BALLOT_X = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
-
+if sys.stdout.encoding != 'UTF-8':
+    sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf8', buffering=1)
+    sys.stderr = open(sys.stderr.fileno(), mode='w', encoding='utf8', buffering=1)
 
 # logger options
 if sys.stdout.isatty():
@@ -39,6 +40,10 @@ if sys.stdout.isatty():
     logging.addLevelName(logging.INFO, "\033[1;33m%s\033[0m" % logging.getLevelName(logging.INFO))
     logging.addLevelName(logging.WARNING, "\033[1;35m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
     logging.addLevelName(logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
+
+# be a little more visual like npm ;-)
+CHECK_MARK = "\033[32m\N{check mark}\033[0m"  # ✔
+HEAVY_BALLOT_X = "\033[31m\N{heavy ballot x}\033[0m"  # ✘
 
 
 def my_parsedate(text):
