@@ -1,5 +1,5 @@
 web/
-test/
+tests/
 README.md
 LICENSE
 setup.cfg

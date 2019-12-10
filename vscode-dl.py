@@ -30,9 +30,9 @@ CPPTOOLS_PLATFORMS = ["linux", "win32", "osx", "linux32"]
 
 ################################
 
-if sys.stdout.encoding != 'UTF-8':
-    sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf8', buffering=1)
-    sys.stderr = open(sys.stderr.fileno(), mode='w', encoding='utf8', buffering=1)
+if sys.stdout.encoding != "UTF-8":
+    sys.stdout = open(sys.stdout.fileno(), mode="w", encoding="utf8", buffering=1)
+    sys.stderr = open(sys.stderr.fileno(), mode="w", encoding="utf8", buffering=1)
 
 # logger options
 if sys.stdout.isatty():
@@ -233,7 +233,10 @@ def get_extensions(extensions, vscode_engine):
         for e in res["results"][0]["extensions"]:
 
             logging.debug(
-                "analyze %s | %s | %s", e["displayName"], e.get("shortDescription", e["displayName"]), e["publisher"]["displayName"]
+                "analyze %s | %s | %s",
+                e["displayName"],
+                e.get("shortDescription", e["displayName"]),
+                e["publisher"]["displayName"],
             )
 
             # find the greatest version compatible with our vscode engine
@@ -329,13 +332,16 @@ def process_cpptools(dst_dir, json_data, e):
             }
 
 
-def dl_go_packages(dst_dir, vsix, json_data):
+def dl_go_packages(dst_dir, vsix, json_data, isImportant=True):
     """
     download the Go extension tools
     """
 
+    # hacks for speed up tests
     if "NO_GO" in os.environ:
         return
+    if "NO_GO_IMPORTANT" in os.environ:
+        isImportant = False
 
     # set the GOPATH to download tools in the mirror directory
     go_path = (dst_dir / "go").absolute()
@@ -360,9 +366,12 @@ def dl_go_packages(dst_dir, vsix, json_data):
         flag = ["📢", "📣"][tool["isImportant"]]
         print(fmt.format(**tool, flag=flag), end="")
         sys.stdout.flush()
-        cmd = ["go", "get", "-u", "-d", tool["importPath"]]
-        rc = subprocess.call(cmd, env=env, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        print([HEAVY_BALLOT_X, CHECK_MARK][rc == 0])
+        if isImportant or tool["isImportant"]:
+            cmd = ["go", "get", "-u", "-d", tool["importPath"]]
+            rc = subprocess.call(cmd, env=env, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+            print([HEAVY_BALLOT_X, CHECK_MARK][rc == 0])
+        else:
+            print(" skipping")
 
     json_data["go-tools"] = tools
 

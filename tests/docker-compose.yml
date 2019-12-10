@@ -16,6 +16,7 @@ services:
   sync:
     build:
       context: ..
+    container_name: vscode_dl_sync
     volumes:
       - mirror:/app/web
       - ./test.yaml:/app/extensions.yaml
@@ -23,7 +24,6 @@ services:
   # test client
   client:
     build: client/
-    container_name: vscode_dl_test
     tty: true
     networks:
       - fake

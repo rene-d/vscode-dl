@@ -3,5 +3,6 @@
 web_root: web
 
 extensions:
+- vscode-icons-team.vscode-icons
 - ms-python.python
-  # - ms-vscode.Go
+- ms-vscode.Go

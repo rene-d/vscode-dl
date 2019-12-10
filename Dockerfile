@@ -8,6 +8,8 @@ RUN apk update \
 &&  python3 -mpip install --upgrade pip \
 &&  python3 -mpip install -r requirements.txt
 
+RUN apk add --no-cache go git
+
 VOLUME /app/web
 
 WORKDIR /app
