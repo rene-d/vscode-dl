@@ -17,6 +17,9 @@ services:
     build:
       context: ..
     container_name: vscode_dl_sync
+    tty: true
+    environment:
+      - NO_GO_IMPORTANT=1
     volumes:
       - mirror:/app/web
       - ./test.yaml:/app/extensions.yaml

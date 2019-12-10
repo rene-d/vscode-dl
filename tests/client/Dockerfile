@@ -13,6 +13,7 @@ RUN apt-get update -y \
 \
 &&  dpkg-reconfigure --frontend noninteractive tzdata \
 &&  update-alternatives --install /usr/bin/go go /usr/lib/go-1.12/bin/go 12 \
+&&  apt-file update \
 \
 &&  python3 -mpip install python-dateutil PyYAML requests requests_cache \
 \
