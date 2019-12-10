@@ -1,6 +1,5 @@
 FROM ubuntu:disco
 
-
 ENV DEBIAN_FRONTEND=noninteractive
 RUN ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
 

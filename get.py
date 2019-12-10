@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# rene-d 2018
+# rene-d 2019
 
 """
 install or updates Visual Studio Code and its extensions
@@ -24,7 +24,7 @@ import textwrap
 
 DEFAULT_URL = "."  # modified when tool is installed locally
 LOCAL_MODE = False  # True when tool is installed locally
-TOOL_VERSION = 32  # numerical value, strictly incremental
+TOOL_VERSION = 33  # numerical value, strictly incremental
 
 ################################
 

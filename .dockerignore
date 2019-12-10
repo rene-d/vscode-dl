@@ -3,3 +3,5 @@ tests/
 README.md
 LICENSE
 setup.cfg
+.vscode/
+.gitignore

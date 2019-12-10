@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 
 python3 <(curl -skL http://mirror/get.py) http://mirror/
 
