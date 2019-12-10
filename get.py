@@ -222,9 +222,10 @@ def update_go_tools(url, dry_run, tools):
     if not url.startswith("http") and not url.startswith("ftp"):
         url = "file://" + url
 
-    cmd = ["lftp", "-c", "open {} ; set mirror:parallel-directories no ; mirror go {}/".format(url, os.environ["HOME"])]
+    # get the archive and untar it
+    cmd = "curl -skL {}/go-tools.tar.gz | tar -xzf -".format(url)
     if not dry_run:
-        subprocess.call(cmd)
+        subprocess.call(cmd, shell=True, cwd=os.environ["HOME"])
     else:
         print_cmd(cmd)
 

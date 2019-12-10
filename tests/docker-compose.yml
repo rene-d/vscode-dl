@@ -25,6 +25,8 @@ services:
   client:
     build: client/
     tty: true
+    environment:
+      - NO_GO_IMPORTANT=1
     networks:
       - fake
     depends_on:
