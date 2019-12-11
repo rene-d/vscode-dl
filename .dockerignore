@@ -1,7 +1,9 @@
 web/
 tests/
+container/
 README.md
 LICENSE
 setup.cfg
 .vscode/
 .gitignore
+.git/
