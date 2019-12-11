@@ -1,0 +1,22 @@
+FROM alpine
+
+ARG COMMIT_ID
+ARG MIRROR_URL=http://mirror/vscode
+
+RUN apk add --no-cache \
+    curl ca-certificates git jq vim tar patch bash \
+    procps openssh-client \
+    gcc g++ musl-dev file make cmake gdb valgrind
+
+RUN set -ex \
+&&  mkdir -p /root/.vscode-server/bin/${COMMIT_ID} \
+&&  curl -skL ${MIRROR_URL}/code/${COMMIT_ID}/vscode-server-linux-alpine.tar.gz | tar -C /root/.vscode-server/bin/$COMMIT_ID --strip-components 1 -xzf -
+
+# pré-installation des extensions
+COPY install-ext.sh /root/
+RUN COMMIT_ID=${COMMIT_ID} MIRROR_URL=${MIRROR_URL} /root/install-ext.sh \
+    ms-vscode.cpptools-linux \
+    ms-python.python \
+    twxs.cmake \
+    waderyan.gitblame \
+    redhat.vscode-yaml

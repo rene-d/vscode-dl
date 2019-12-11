@@ -1,0 +1,18 @@
+FROM buildpack-deps:buster
+
+ARG COMMIT_ID
+ARG MIRROR_URL=http://mirror/vscode
+
+RUN apt-get update -y && apt-get install -y jq
+
+RUN mkdir -p /root/.vscode-server/bin/${COMMIT_ID} \
+&&  curl -skL ${MIRROR_URL}/code/${COMMIT_ID}/vscode-server-linux-x64.tar.gz | tar -C /root/.vscode-server/bin/$COMMIT_ID --strip-components 1 -xzf -
+
+# pré-installation des extensions
+COPY install-ext.sh /root/
+RUN COMMIT_ID=${COMMIT_ID} MIRROR_URL=${MIRROR_URL} /root/install-ext.sh \
+    ms-vscode.cpptools-linux \
+    ms-python.python \
+    twxs.cmake \
+    waderyan.gitblame \
+    redhat.vscode-yaml
