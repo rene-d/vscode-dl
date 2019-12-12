@@ -339,9 +339,8 @@ def dl_go_packages(dst_dir, vsix, json_data, dry_run, isImportant=True):
 
     # hacks for speed up tests
     if "NO_GO" in os.environ:
+        json_data["go-tools"] = []
         return
-    if "NO_GO_IMPORTANT" in os.environ:
-        isImportant = False
 
     # set the GOPATH to download tools in the mirror directory
     go_path = (dst_dir / "go").absolute()
