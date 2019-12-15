@@ -179,19 +179,17 @@ def update_code(url, dry_run, platform, data):
             if settings.exists() is False or settings.stat().st_size == 0:
                 settings.parent.mkdir(parents=True, exist_ok=True)
                 with settings.open("w") as fd:
-                    fd.write(
-                        """\
-{
-    "update.mode": "none",
-    "update.showReleaseNotes": false,
-    "extensions.autoCheckUpdates": false,
-    "extensions.autoUpdate": false,
-    "telemetry.enableCrashReporter": false,
-    "telemetry.enableTelemetry": false,
-    "files.trimTrailingWhitespace": true,
-    "files.trimFinalNewlines": true,
-}"""
-                    )
+                    cfg = {
+                        "update.mode": "none",
+                        "update.showReleaseNotes": False,
+                        "extensions.autoCheckUpdates": False,
+                        "extensions.autoUpdate": False,
+                        "telemetry.enableCrashReporter": False,
+                        "telemetry.enableTelemetry": False,
+                        "files.trimTrailingWhitespace": True,
+                        "files.trimFinalNewlines": True,
+                    }
+                    json.dump(cfg, fd, indent=4)
                 print("created: {}".format(settings))
 
     else:
