@@ -104,3 +104,6 @@ extensions:
 
 # ansible
 - vscoss.vscode-ansible
+
+# jenkins
+- secanis.jenkinsfile-support
