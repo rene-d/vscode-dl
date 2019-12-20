@@ -97,7 +97,7 @@ Code allows you to [develop inside a container](https://code.visualstudio.com/do
 
 It can be easily adapted to an existing build environment, even for SSH remote development.
 
-As the time of writing (December 2019), only x64, armhf (32-bit) and Alpine/amd64 platforms are available. arm64 will come soon.
+As the time of writing (December 2019), only x64, armhf, arm64 and Alpine/amd64 platforms are available.
 
 ## The Go extension case
 
