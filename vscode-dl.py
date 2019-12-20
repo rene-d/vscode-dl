@@ -537,7 +537,7 @@ def dl_code(dst_dir, channel="stable", revision="latest"):
     data["deb"] = deb_filename
     data["server"] = []
 
-    for arch in ["x64", "armhf", "alpine"]:
+    for arch in ["x64", "armhf", "alpine", "arm64"]:
         package = f"server-linux-{arch}"
         url = f"https://update.code.visualstudio.com/commit:{commit_id}/{package}/{channel}"
         r = requests.get(url, allow_redirects=False)
