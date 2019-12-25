@@ -14,4 +14,4 @@ WORKDIR /app
 COPY . .
 RUN pip3 install .
 
-ENTRYPOINT [ "/usr/local/bin/vscode-dl" ]
+ENTRYPOINT [ "/usr/bin/vscode-dl" ]
