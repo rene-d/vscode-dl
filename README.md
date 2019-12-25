@@ -1,5 +1,9 @@
 # VSCode Downloader
 
+[![Build Status](https://travis-ci.org/rene-d/vscode-dl.svg?branch=master)](https://travis-ci.org/rene-d/vscode-dl)
+[![pyi](https://img.shields.io/pypi/v/vscode-dl.svg)](https://pypi.python.org/pypi/vscode-dl)
+[![pyi](https://img.shields.io/pypi/pyversions/vscode-dl.svg)](https://pypi.python.org/pypi/vscode-dl)
+
 ## Description
 
 [vscode-dl](https://rene-d.github.io/vscode-dl) is a Python3 script that downloads the latest Linux version of [Visual Studio Code](http://code.visualstudio.com) and a curated list of extensions for installation on computers without Internet connection or proxy restrictions.
