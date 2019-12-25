@@ -12,6 +12,6 @@ VOLUME /app/web
 WORKDIR /app
 
 COPY . .
-RUN python3 -mpip install -r requirements.txt
+RUN pip3 install .
 
-ENTRYPOINT [ "/app/vscode-dl.py" ]
+ENTRYPOINT [ "/usr/bin/vscode-dl" ]
