@@ -22,6 +22,7 @@ import yaml
 import shutil
 import urllib
 import zipfile
+import pkg_resources
 
 ################################
 
@@ -601,15 +602,18 @@ def download_assets(destination):
     download assets (css, images, javascript)
     """
 
-    src_dir = pathlib.Path(__file__).parent
     dst_dir = pathlib.Path(destination)
-
     logging.debug("copy assets into %s", dst_dir)
 
-    if src_dir != dst_dir:
-        shutil.copy2(src_dir / "index.html", dst_dir)
-        shutil.copy2(src_dir / "get.py", dst_dir)
-        (dst_dir / "get.py").chmod(0o755)
+    # src_dir = pathlib.Path(__file__).parent
+    # if src_dir != dst_dir:
+    #     shutil.copy2(src_dir / "index.html", dst_dir)
+    #     shutil.copy2(src_dir / "get.py", dst_dir)
+    #     (dst_dir / "get.py").chmod(0o755)
+
+    shutil.copy2(pkg_resources.resource_filename(__name__, "index.html"), dst_dir)
+    shutil.copy2(pkg_resources.resource_filename(__name__, "get.py"), dst_dir)
+    (dst_dir / "get.py").chmod(0o755)
 
     if (dst_dir / "team.json").exists() is False:
         with (dst_dir / "team.json").open("w") as fd:
@@ -642,8 +646,11 @@ def print_conf(args):
     print the configuration as a YAML file
     """
 
-    s = subprocess.check_output("code --list-extensions", shell=True)
-    installed = set(s.decode().split())
+    try:
+        s = subprocess.check_output("code --list-extensions", shell=True, stderr=subprocess.DEVNULL)
+        installed = set(s.decode().split())
+    except subprocess.CalledProcessError:
+        installed = set()
 
     listed = set()
     if os.path.exists(args.conf):
@@ -775,13 +782,16 @@ def main():
         requests_cache.install_cache("cache", allowable_methods=("GET", "POST"), expire_after=expire_after)
         requests_cache.core.remove_expired_responses()
 
+    args.conf = os.path.abspath(args.conf)
+    if not os.path.isfile(args.conf):
+        args.conf = pkg_resources.resource_filename(__name__, "extensions.yaml")
+        logging.debug(f"using default conf {args.conf}")
+
     if args.root is None:
         try:
             args.root = yaml.load(open(args.conf), Loader=yaml.BaseLoader)["web_root"]
         except Exception:
             args.root = "web"  # default directory
-
-    args.conf = os.path.abspath(args.conf)
     args.root = os.path.abspath(args.root)
 
     if os.path.isdir(args.root) is False:
