@@ -3,6 +3,8 @@
 [![Build Status](https://travis-ci.org/rene-d/vscode-dl.svg?branch=master)](https://travis-ci.org/rene-d/vscode-dl)
 [![pyi](https://img.shields.io/pypi/v/vscode-dl.svg)](https://pypi.python.org/pypi/vscode-dl)
 [![pyi](https://img.shields.io/pypi/pyversions/vscode-dl.svg)](https://pypi.python.org/pypi/vscode-dl)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 
 ## Description
 
