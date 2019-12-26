@@ -132,7 +132,7 @@ As the time of writing (December 2019), only x64, armhf, arm64 and Alpine/amd64 
 
 ## The Go extension case
 
-The [Go extension](https://marketplace.visualstudio.com/items/ms-vscode.Go) requires some Go packages to be functional (linter, formatter, code analyzer, etc.). These dependencies are listed into the extension, that tries to install them from Internet. To bypass this step, the sync program (`vscode-dl`- uses `go get -d` commands to download the required packages, and the update tool (`get.py` aka. `code-tool`) installs them in `~/go` (default GOPATH). Thus, the GOPATH environment variable should include at least this directory.
+The [Go extension](https://marketplace.visualstudio.com/items/ms-vscode.Go) requires some Go packages to be functional (linter, formatter, code analyzer, etc.). These dependencies are listed into the extension, that tries to install them from Internet. To bypass this step, the sync program (`vscode-dl` uses `go get -d` command to download the required packages, and the update tool (`get.py` aka. `code-tool`) installs them in `~/go` (default GOPATH). Thus, the GOPATH environment variable should include at least this directory.
 
 ## Links
 
