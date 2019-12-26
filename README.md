@@ -18,9 +18,7 @@ When run again, it tries to update extensions and VSCode to their latest version
 
 ### Requirements
 
-* [Python3](https://www.python.org/downloads) : version >= 3.6 (older ones *won't* work because of [f-strings](https://www.python.org/dev/peps/pep-0498))
-* [Requests](http://python-requests.org) and [Requests-cache](https://github.com/reclosedev/requests-cache)
-* [PyYAML](https://pyyaml.org)
+* [Python3](https://www.python.org/downloads) : version >= 3.6 (older ones *won't* work because of [f-strings](https://www.python.org/dev/peps/pep-0498)). The companion tool (see below) requires Python >= 3.5.
 
 ### pip
 
@@ -38,9 +36,22 @@ vscode-dl/bin/pip install vscode-dl
 vscode-dl/bin/vscode-dl --help
 ```
 
+### from GitHub repository
+
+```bash
+pip3 install -r requirements.txt
+
+# install the package
+python3 setup.py install
+
+# run directly from source
+cd src/vscode_dl
+./vscode_dl.py --help
+```
+
 ## Basic usage
 
-Download Visual Studio Code and extensions listed in `extensions.yaml` into the `web/` subdirectory ([screenshot](http://rene-d.github.io/vscode-dl/screenshot.html)) :
+Download Visual Studio Code and extensions listed in `extensions.yaml` (if found, otherwise the default list) into the `web/` subdirectory ([screenshot](http://rene-d.github.io/vscode-dl/screenshot.html)) :
 ```bash
 vscode-dl
 ```
@@ -58,13 +69,13 @@ A Dockerfile is provided to run the app into a container, with interpreter and r
 
 ```bash
 # build the image
-docker build -t vscode_dl .
+docker build -t vscode-dl .
 
 # run the downloader
-docker run -ti --rm -v /path/to/mirror:/app/web vscode_dl
+docker run -ti --rm -v /path/to/mirror:/app/web vscode-dl
 
 # run the downloader with an alternate extension list
-docker run -ti --rm -v /path/to/mirror:/app/web -v /path/to/extensions.yaml:/app/extensions.yaml vscode_dl
+docker run -ti --rm -v /path/to/mirror:/app/web -v /path/to/extensions.yaml:/app/extensions.yaml vscode-dl
 ```
 
 ## Installation and update tool
@@ -91,7 +102,7 @@ The following command wil install or update Code and the extensions listed above
 python3 <(curl -sL http://mirror.url:port/get.py) -t myteam http://mirror.url:port/
 ```
 
-### The tool : `code-tool`
+### The companion tool : `code-tool`
 
 The tool installs itself into `~/.local/bin/code-tool`. This tool can be used to maintenance tasks and install new extensions. You may have to add this directory to your PATH.
 
