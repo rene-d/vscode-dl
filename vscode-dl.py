@@ -21,8 +21,7 @@ except ModuleNotFoundError:
             "-m",
             "pip",
             "install",
-            "--target",
-            "/tmp/vscode_dl-packages",
+#            "--target", "/tmp/vscode_dl-packages",
             "--upgrade",
             ".",
         ]
