@@ -7,8 +7,10 @@ To keep compatibility with the old repository
 import sys
 import subprocess
 import importlib
+import pathlib
 
 sys.path.append("/tmp/vscode_dl-packages")
+cwd = pathlib.Path(__file__).parent.resolve().as_posix()
 
 try:
     # try to import vscode-dl package
@@ -21,10 +23,12 @@ except ModuleNotFoundError:
             "-m",
             "pip",
             "install",
-#            "--target", "/tmp/vscode_dl-packages",
+            "--target", "/tmp/vscode_dl-packages",
             "--upgrade",
             ".",
-        ]
+        ],
+        cwd=cwd
+
     )
     # now we can import it
     importlib.invalidate_caches()
