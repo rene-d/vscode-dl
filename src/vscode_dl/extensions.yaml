@@ -89,6 +89,7 @@ extensions:
 - idleberg.applescript
 - flipphillips.wolfram-language
 - freebroccolo.reasonml
+- 42Crunch.vscode-openapi
 
 # ruby
 - rebornix.Ruby
