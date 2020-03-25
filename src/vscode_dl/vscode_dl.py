@@ -100,16 +100,24 @@ def download(url, file):
 
 # cf. vs/platform/extensionManagement/node/extensionGalleryService.ts
 class FilterType:
+    #   Tag = 1
     ExtensionId = 4
+    #   Category = 5
     ExtensionName = 7
     Target = 8
+    #   Featured = 9
+    #   SearchText = 10
     ExcludeWithFlags = 12
 
 
 class Flags:
+    #   None = 0x0
     IncludeVersions = 0x1
     IncludeFiles = 0x2
+    #   IncludeCategoryAndTags = 0x4
+    #   IncludeSharedAccounts = 0x8
     IncludeVersionProperties = 0x10
+    #   ExcludeNonValidated = 0x20
     IncludeInstallationTargets = 0x40
     IncludeAssetUri = 0x80
     IncludeStatistics = 0x100
@@ -126,9 +134,13 @@ def is_engine_valid(engine, extension):
     if engine == "*" or extension == "*":
         return True
     if extension[0] != "^":
-        # if version doesn't begin with ^, I don't know how to handle it
-        logging.error("unknown engine version semantic: %s (current: %s)", extension, engine)
-        return False
+        if extension[0].isdigit():
+            # sometimes, there's not the leading ^·
+            extension = "^" + extension
+        else:
+            # if version doesn't begin with ^ or a digit, I don't know how to handle it
+            logging.error("unknown engine version semantic: %s (current: %s)", extension, engine)
+            return False
     a = list(map(int, engine.split(".")))
     b = list(map(int, extension[1:].split(".")))
     return a >= b
@@ -163,10 +175,14 @@ def get_extensions(extensions, vscode_engine):
 
     # query the gallery
     logging.debug("query IncludeLatestVersionOnly")
+    # json.dump(data, open("query1.json", "w"), indent=2)
+
     req = requests.post(
         "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery", json=data, headers=headers
     )
     res = req.json()
+
+    # json.dump(res, open("response1.json", "w"), indent=2)
 
     # analyze the response
     not_compatible = []
@@ -175,33 +191,27 @@ def get_extensions(extensions, vscode_engine):
     if "results" in res and "extensions" in res["results"][0]:
         for e in res["results"][0]["extensions"]:
 
-            for v in e["versions"]:
-                pass
+            logging.debug("%s.%s %s", e["publisher"]["publisherName"], e["extensionName"], e["versions"][0]["version"])
 
-            for p in e["versions"][0]["properties"]:
-                if p["key"] == "Microsoft.VisualStudio.Code.Engine":
-                    if is_engine_valid(vscode_engine, p["value"]):
-                        break
+            engines = list(
+                p["value"] for p in e["versions"][0]["properties"] if p["key"] == "Microsoft.VisualStudio.Code.Engine"
+            )
+            for engine in engines:
+                if is_engine_valid(vscode_engine, engine):
+                    break
             else:
-                logging.warning(
-                    "KO: '%s | %s | %s | %s",
-                    e["displayName"],
-                    e.get("shortDescription", e["displayName"]),
-                    e["publisher"]["displayName"],
-                    e["versions"][0]["version"],
-                )
-                logging.debug("KO: %r", e["versions"][0]["properties"])
+                logging.warning("engine %r does not match engine %s", engines, vscode_engine)
                 # we will look for a suitable version later
                 not_compatible.append(e["extensionId"])
                 continue
 
-            logging.debug(
-                "OK: '%s | %s | %s | %s",
-                e["displayName"],
-                e.get("shortDescription", e["displayName"]),
-                e["publisher"]["displayName"],
-                e["versions"][0]["version"],
-            )
+            # logging.debug(
+            #     "OK: '%s | %s | %s | %s",
+            #     e["displayName"],
+            #     e.get("shortDescription", e["displayName"]),
+            #     e["publisher"]["displayName"],
+            #     e["versions"][0]["version"],
+            # )
             result.append(e)
 
     if len(not_compatible) == 0:
@@ -224,43 +234,48 @@ def get_extensions(extensions, vscode_engine):
         data["filters"][0]["criteria"].append({"filterType": FilterType.ExtensionId, "value": id})
 
     # query the gallery
-    # logging.debug("query IncludeVersions")
+    logging.debug("query IncludeVersions")
+    # json.dump(data, open("query2.json", "w"), indent=2)
     req = requests.post(
         "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery", json=data, headers=headers
     )
     res = req.json()
+    # json.dump(res, open("response2.json", "w"), indent=2)
 
     if "results" in res and "extensions" in res["results"][0]:
         for e in res["results"][0]["extensions"]:
 
             logging.debug(
-                "analyze %s | %s | %s",
-                e["displayName"],
-                e.get("shortDescription", e["displayName"]),
-                e["publisher"]["displayName"],
+                "analyze %s.%s (%d versions)", e["publisher"]["publisherName"], e["extensionName"], len(e["versions"])
             )
 
             # find the greatest version compatible with our vscode engine
             max_vernum = []
             max_version = None
+            max_engine = None
+
             for v in e["versions"]:
+                if "properties" not in v:
+                    continue
+
                 engine = None
                 for p in v["properties"]:
                     if p["key"] == "Microsoft.VisualStudio.Code.Engine":
                         engine = p["value"]
                 if engine:
                     is_valid = is_engine_valid(vscode_engine, engine)
-                    logging.debug("found version %s engine %s : %s", v["version"], engine, is_valid)
+                    # logging.debug("found version %s engine %s : %s", v["version"], engine, is_valid)
                     if is_valid:
                         # well, it seems that versions are sorted latest first
-                        # since it's not sure, I prefer searching for the greatest version number
+                        # but I prefer looking for the greatest version number
                         vernum = list(map(int, v["version"].split(".")))
                         if vernum > max_vernum:
                             max_vernum = vernum
                             max_version = v
+                            max_engine = engine
 
             if max_version:
-                logging.debug("version %s is the best suitable choice", max_version["version"])
+                logging.debug("version %s is the best suitable choice, engine %s", max_version["version"], max_engine)
                 e["versions"] = [max_version]
             else:
                 logging.error("no suitable version found")
@@ -387,7 +402,7 @@ def dl_go_packages(dst_dir, vsix, json_data, dry_run, isImportant=True):
     json_data["go-tools"] = tools
 
 
-def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run):
+def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run, no_golang):
     """
     download or update extensions
     """
@@ -463,7 +478,7 @@ def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run):
                 url = "https://cdn.vsassets.io/v/20180521T120403/_content/Header/default_icon.png"
                 download(url, icon)
 
-        if key == "ms-vscode.Go":
+        if key == "ms-vscode.Go" and not no_golang:
             dl_go_packages(dst_dir, vsix, json_data, dry_run)
 
     # write the markdown catalog file
@@ -676,7 +691,24 @@ def download_code_vsix(args):
     dst_dir = pathlib.Path(args.root)
 
     # download VSCode
-    json_data["code"] = dl_code(dst_dir)
+    if not args.no_code:
+        json_data["code"] = dl_code(dst_dir)
+
+    # set the engine version (computed value from vscode version...)
+    if args.engine:
+        engine_version = ".".join((args.engine + ".0").split(".")[0:3])
+    else:
+
+        if "code" in json_data and "version" in json_data["code"]:
+            engine_version = ".".join(json_data["code"]["version"].split(".")[0:2] + ["0"])
+            if engine_version == "1.29.0":
+                engine_version = "1.29.1"
+            logging.debug(
+                "vscode engine version: %s (deduced from version %s)", engine_version, json_data["code"]["version"]
+            )
+        else:
+            engine_version = "*"
+    logging.debug("using Code engine version: %s", engine_version)
 
     # prepare the extension list
     extensions = list()
@@ -689,37 +721,8 @@ def download_code_vsix(args):
             extensions = list(listed.union(extensions))
         conf = None
 
-    # get installed extensions if asked
-    if args.installed:
-        s = subprocess.check_output("code --list-extensions", shell=True)
-        installed = set(s.decode().split())
-        extensions = list(installed.union(extensions))
-
-    # set the engine version (computed value from vscode version...)
-    if args.engine:
-        engine_version = ".".join((args.engine + ".0").split(".")[0:3])
-        logging.debug("set vscode engine version: %s", engine_version)
-    else:
-        # # from the installed vscode
-        # s = subprocess.run("code --version 2>/dev/null", shell=True, stdout=subprocess.PIPE).stdout
-        # if s != "":
-        #     ver = s.decode().split('\n')[0]
-        #     logging.debug("installed vscode version: %s", ver)
-        #     engine_version = ".".join(map(str, list(map(int, ver.split('.')))[0:2] + [0]))
-        #     logging.debug("computed vscode engine version: %s", engine_version)
-
-        if "code" in json_data and "version" in json_data["code"]:
-            engine_version = ".".join(json_data["code"]["version"].split(".")[0:2] + ["0"])
-            if engine_version == "1.29.0":
-                engine_version = "1.29.1"
-            logging.debug(
-                "vscode engine version: %s (deduced from version %s)", engine_version, json_data["code"]["version"]
-            )
-        else:
-            engine_version = "*"
-
     # download extensions
-    dl_extensions(dst_dir, extensions, json_data, engine_version, args.dry_run)
+    dl_extensions(dst_dir, extensions, json_data, engine_version, args.dry_run, args.no_golang)
 
     # write the JSON data file
     with open(dst_dir / "data.json", "w") as f:
@@ -752,7 +755,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", help="increase verbosity", action="store_true")
     parser.add_argument("-c", "--conf", help="configuration file", default="extensions.yaml")
-    parser.add_argument("-i", "--installed", help="scan installed extensions", action="store_true")
+    parser.add_argument("--no-code", help="do not download Code", action="store_true")
+    parser.add_argument("--no-golang", help="do not download Go packages", action="store_true")
     parser.add_argument("-e", "--engine", help="set the required engine version")
     parser.add_argument(
         "-k", "--keep", help="number of old versions to keep", type=int, metavar="N", nargs="?", const=10
@@ -802,7 +806,7 @@ def main():
     if args.server:
         return server(args.root, args.port)
 
-    # action 1: download assets (and do nothing else)
+    # action 1: only download assets (and do nothing else)
     if args.assets:
         logging.warning("--assets is deprecated")
         return download_assets(args.root)
