@@ -6,7 +6,7 @@ web_root: web
 # <publisherName>.<extensionName>
 extensions:
 # base
-- ms-vscode.Go
+- golang.Go
 - ms-vscode.cpptools
 - ms-python.python
 

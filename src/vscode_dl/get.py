@@ -314,7 +314,7 @@ def update_extensions(url, dry_run, platform, data):
                 )
                 install_extension(url, vsix, dry_run)
 
-            if key == "ms-vscode.Go":
+            if key == "golang.Go":
                 defer.append(lambda: update_go_tools(url, dry_run, data["go-tools"]))
 
         except Exception as e:
@@ -351,7 +351,7 @@ def install_extensions(url, dry_run, platform, extensions_list, data):
         print("installing: {} version {} {}".format(colorized_key, version, HOT_BEVERAGE))
         install_extension(url, vsix, dry_run)
 
-        if key == "ms-vscode.Go":
+        if key == "golang.Go":
             defer.append(lambda: update_go_tools(url, dry_run, data["go-tools"]))
 
     for action in defer:

@@ -463,7 +463,7 @@ def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run):
                 url = "https://cdn.vsassets.io/v/20180521T120403/_content/Header/default_icon.png"
                 download(url, icon)
 
-        if key == "ms-vscode.Go":
+        if key == "golang.Go":
             dl_go_packages(dst_dir, vsix, json_data, dry_run)
 
     # write the markdown catalog file
