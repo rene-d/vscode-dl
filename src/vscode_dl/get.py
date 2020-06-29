@@ -24,7 +24,7 @@ import textwrap
 
 DEFAULT_URL = "."  # modified when tool is installed locally
 LOCAL_MODE = False  # True when tool is installed locally
-TOOL_VERSION = 33  # numerical value, strictly incremental
+TOOL_VERSION = 34  # numerical value, strictly incremental
 
 ################################
 
