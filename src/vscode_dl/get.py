@@ -24,7 +24,7 @@ import textwrap
 
 DEFAULT_URL = "."  # modified when tool is installed locally
 LOCAL_MODE = False  # True when tool is installed locally
-TOOL_VERSION = 34  # numerical value, strictly incremental
+TOOL_VERSION = 35  # numerical value, strictly incremental
 
 ################################
 
@@ -179,17 +179,19 @@ def update_code(url, dry_run, platform, data):
             if settings.exists() is False or settings.stat().st_size == 0:
                 settings.parent.mkdir(parents=True, exist_ok=True)
                 with settings.open("w") as fd:
-                    cfg = {
-                        "update.mode": "none",
-                        "update.showReleaseNotes": False,
-                        "extensions.autoCheckUpdates": False,
-                        "extensions.autoUpdate": False,
-                        "telemetry.enableCrashReporter": False,
-                        "telemetry.enableTelemetry": False,
-                        "files.trimTrailingWhitespace": True,
-                        "files.trimFinalNewlines": True,
-                    }
-                    json.dump(cfg, fd, indent=4)
+                    fd.write(
+                        """\
+{
+    "update.mode": "none",
+    "update.showReleaseNotes": false,
+    "extensions.autoCheckUpdates": false,
+    "extensions.autoUpdate": false,
+    "telemetry.enableCrashReporter": false,
+    "telemetry.enableTelemetry": false,
+    "files.trimTrailingWhitespace": true,
+    "files.trimFinalNewlines": true,
+}"""
+                    )
                 print("created: {}".format(settings))
 
     else:
@@ -223,12 +225,12 @@ def update_go_tools(url, dry_run, tools):
     # get the archive and untar it
     cmd = "curl -skL {}/go-tools.tar.gz | tar -xzf -".format(url)
     if not dry_run:
-        subprocess.call(cmd, shell=True, cwd=os.environ["HOME"])
+        subprocess.call(cmd, shell=True, cwd="/usr/local")
     else:
         print_cmd(cmd)
 
     env = os.environ.copy()
-    env["GOPATH"] = pathlib.Path("~/go").expanduser().as_posix()
+    #env["GOPATH"] = pathlib.Path("~/go").expanduser().as_posix()
 
     for tool in tools.values():
         cmd = ["go", "get", tool["importPath"]]
