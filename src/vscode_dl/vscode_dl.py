@@ -37,10 +37,18 @@ if sys.stdout.encoding != "UTF-8":
 
 # logger options
 if sys.stdout.isatty():
-    logging.addLevelName(logging.DEBUG, "\033[0;32m%s\033[0m" % logging.getLevelName(logging.DEBUG))
-    logging.addLevelName(logging.INFO, "\033[1;33m%s\033[0m" % logging.getLevelName(logging.INFO))
-    logging.addLevelName(logging.WARNING, "\033[1;35m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
-    logging.addLevelName(logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
+    logging.addLevelName(
+        logging.DEBUG, "\033[0;32m%s\033[0m" % logging.getLevelName(logging.DEBUG)
+    )
+    logging.addLevelName(
+        logging.INFO, "\033[1;33m%s\033[0m" % logging.getLevelName(logging.INFO)
+    )
+    logging.addLevelName(
+        logging.WARNING, "\033[1;35m%s\033[1;0m" % logging.getLevelName(logging.WARNING)
+    )
+    logging.addLevelName(
+        logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR)
+    )
 
 # be a little more visual like npm ;-)
 CHECK_MARK = "\033[32m\N{check mark}\033[0m"  # ✔
@@ -139,7 +147,9 @@ def is_engine_valid(engine, extension):
             extension = "^" + extension
         else:
             # if version doesn't begin with ^ or a digit, I don't know how to handle it
-            logging.error("unknown engine version semantic: %s (current: %s)", extension, engine)
+            logging.error(
+                "unknown engine version semantic: %s (current: %s)", extension, engine
+            )
             return False
     a = list(map(int, engine.split(".")))
     b = list(map(int, extension[1:].split(".")))
@@ -161,24 +171,39 @@ def get_extensions(extensions, vscode_engine):
         "filters": [
             {
                 "criteria": [
-                    {"filterType": FilterType.Target, "value": "Microsoft.VisualStudio.Code"},
-                    {"filterType": FilterType.ExcludeWithFlags, "value": str(Flags.Unpublished)},
+                    {
+                        "filterType": FilterType.Target,
+                        "value": "Microsoft.VisualStudio.Code",
+                    },
+                    {
+                        "filterType": FilterType.ExcludeWithFlags,
+                        "value": str(Flags.Unpublished),
+                    },
                 ]
             }
         ],
-        "flags": Flags.IncludeLatestVersionOnly + Flags.IncludeAssetUri + Flags.IncludeVersionProperties,
+        "flags": Flags.IncludeLatestVersionOnly
+        + Flags.IncludeAssetUri
+        + Flags.IncludeVersionProperties,
     }
     for ext in sorted(extensions):
-        data["filters"][0]["criteria"].append({"filterType": FilterType.ExtensionName, "value": ext})
+        data["filters"][0]["criteria"].append(
+            {"filterType": FilterType.ExtensionName, "value": ext}
+        )
 
-    headers = {"Content-type": "application/json", "Accept": "application/json;api-version=3.0-preview.1"}
+    headers = {
+        "Content-type": "application/json",
+        "Accept": "application/json;api-version=3.0-preview.1",
+    }
 
     # query the gallery
     logging.debug("query IncludeLatestVersionOnly")
     # json.dump(data, open("query1.json", "w"), indent=2)
 
     req = requests.post(
-        "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery", json=data, headers=headers
+        "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery",
+        json=data,
+        headers=headers,
     )
     res = req.json()
 
@@ -191,16 +216,25 @@ def get_extensions(extensions, vscode_engine):
     if "results" in res and "extensions" in res["results"][0]:
         for e in res["results"][0]["extensions"]:
 
-            logging.debug("%s.%s %s", e["publisher"]["publisherName"], e["extensionName"], e["versions"][0]["version"])
+            logging.debug(
+                "%s.%s %s",
+                e["publisher"]["publisherName"],
+                e["extensionName"],
+                e["versions"][0]["version"],
+            )
 
             engines = list(
-                p["value"] for p in e["versions"][0]["properties"] if p["key"] == "Microsoft.VisualStudio.Code.Engine"
+                p["value"]
+                for p in e["versions"][0]["properties"]
+                if p["key"] == "Microsoft.VisualStudio.Code.Engine"
             )
             for engine in engines:
                 if is_engine_valid(vscode_engine, engine):
                     break
             else:
-                logging.warning("engine %r does not match engine %s", engines, vscode_engine)
+                logging.warning(
+                    "engine %r does not match engine %s", engines, vscode_engine
+                )
                 # we will look for a suitable version later
                 not_compatible.append(e["extensionId"])
                 continue
@@ -223,21 +257,33 @@ def get_extensions(extensions, vscode_engine):
         "filters": [
             {
                 "criteria": [
-                    {"filterType": FilterType.Target, "value": "Microsoft.VisualStudio.Code"},
-                    {"filterType": FilterType.ExcludeWithFlags, "value": str(Flags.Unpublished)},
+                    {
+                        "filterType": FilterType.Target,
+                        "value": "Microsoft.VisualStudio.Code",
+                    },
+                    {
+                        "filterType": FilterType.ExcludeWithFlags,
+                        "value": str(Flags.Unpublished),
+                    },
                 ]
             }
         ],
-        "flags": Flags.IncludeVersions + Flags.IncludeAssetUri + Flags.IncludeVersionProperties,
+        "flags": Flags.IncludeVersions
+        + Flags.IncludeAssetUri
+        + Flags.IncludeVersionProperties,
     }
     for id in not_compatible:
-        data["filters"][0]["criteria"].append({"filterType": FilterType.ExtensionId, "value": id})
+        data["filters"][0]["criteria"].append(
+            {"filterType": FilterType.ExtensionId, "value": id}
+        )
 
     # query the gallery
     logging.debug("query IncludeVersions")
     # json.dump(data, open("query2.json", "w"), indent=2)
     req = requests.post(
-        "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery", json=data, headers=headers
+        "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery",
+        json=data,
+        headers=headers,
     )
     res = req.json()
     # json.dump(res, open("response2.json", "w"), indent=2)
@@ -246,7 +292,10 @@ def get_extensions(extensions, vscode_engine):
         for e in res["results"][0]["extensions"]:
 
             logging.debug(
-                "analyze %s.%s (%d versions)", e["publisher"]["publisherName"], e["extensionName"], len(e["versions"])
+                "analyze %s.%s (%d versions)",
+                e["publisher"]["publisherName"],
+                e["extensionName"],
+                len(e["versions"]),
             )
 
             # find the greatest version compatible with our vscode engine
@@ -275,7 +324,11 @@ def get_extensions(extensions, vscode_engine):
                             max_engine = engine
 
             if max_version:
-                logging.debug("version %s is the best suitable choice, engine %s", max_version["version"], max_engine)
+                logging.debug(
+                    "version %s is the best suitable choice, engine %s",
+                    max_version["version"],
+                    max_engine,
+                )
                 e["versions"] = [max_version]
             else:
                 logging.error("no suitable version found")
@@ -303,7 +356,9 @@ def process_cpptools(dst_dir, json_data, e):
     platforms = ["linux"]
 
     # fetch all releases
-    releases = requests.get("https://api.github.com/repos/Microsoft/vscode-cpptools/releases")
+    releases = requests.get(
+        "https://api.github.com/repos/Microsoft/vscode-cpptools/releases"
+    )
 
     if releases.status_code != 200:
         return
@@ -342,7 +397,8 @@ def process_cpptools(dst_dir, json_data, e):
                 "iconAsset": f'{e["versions"][0]["assetUri"]}/Microsoft.VisualStudio.Services.Icons.Small',
                 "description": e.get("shortDescription", e["displayName"]),
                 "author": e["publisher"]["displayName"],
-                "authorUrl": "https://marketplace.visualstudio.com/publishers/" + e["publisher"]["publisherName"],
+                "authorUrl": "https://marketplace.visualstudio.com/publishers/"
+                + e["publisher"]["publisherName"],
                 "lastUpdated": parse_date(asset["updated_at"]),
                 "platform": platform,
             }
@@ -366,17 +422,33 @@ def dl_go_packages(dst_dir, vsix, json_data, dry_run, isImportant=True):
 
     # get the list of tools
     z = zipfile.ZipFile(vsix)
-    js = z.read("extension/out/src/goTools.js")
-    m = re.search(rb"const allToolsInformation = (.*);", js, re.DOTALL)
+    js = z.read("extension/dist/goMain.js")
+    m = re.search(rb"exports.allToolsInformation = ({.+?\n});\n", js, re.DOTALL)
     m = m.group(1)
-    m = re.sub(rb",\s*}", b"}", m)
-    m = m.replace(b"'", b'"')
-    m = re.sub(rb"\b(\w+):", rb'"\1":', m)
-    tools = json.loads(m)
+
+    tools = {}
+    tool = {}
+    for i in m.decode().split("\n"):
+        if re.match(r"'[-\w]+': {", i.strip()):
+            tool = {}
+
+        kv = re.search(r"(\w+): (.+)", i)
+        if kv:
+            k, v = kv.groups()
+            v = v.rstrip(",")
+            v = v.strip("'")
+            tool[k] = v
+            if k == "isImportant":
+                tool[k] = bool(v)
+            if k == "description":
+                tools[tool["name"]] = tool
+                # print("  tool detected: {} - {}".format(tool["name"], tool["description"]))
 
     # issue a "go get" command for each tool
     max_length = max(len(tool["importPath"]) for tool in tools.values())
-    fmt = "    {importPath:%d} {description} {flag}     " % (((max_length + 7) // 8) * 8 + 4)
+    fmt = "    {importPath:%d} {description} {flag}     " % (
+        ((max_length + 7) // 8) * 8 + 4
+    )
     for tool in tools.values():
         flag = ["📢", "📣"][tool["isImportant"]]
         print(fmt.format(**tool, flag=flag), end="")
@@ -387,7 +459,9 @@ def dl_go_packages(dst_dir, vsix, json_data, dry_run, isImportant=True):
                 rc = 0
                 print(cmd)
             else:
-                rc = subprocess.call(cmd, env=env, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+                rc = subprocess.call(
+                    cmd, env=env, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL
+                )
             print([HEAVY_BALLOT_X, CHECK_MARK][rc == 0])
         else:
             print(" skipping")
@@ -438,14 +512,16 @@ def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run, no_go
             json_data["extensions"][key] = {
                 "version": version,
                 "vsix": "vsix/" + (key + "-" + version + ".vsix"),
-                "vsixAsset": e["versions"][0]["assetUri"] + "/Microsoft.VisualStudio.Services.VSIXPackage",
+                "vsixAsset": e["versions"][0]["assetUri"]
+                + "/Microsoft.VisualStudio.Services.VSIXPackage",
                 "url": "https://marketplace.visualstudio.com/items?itemName=" + key,
                 "icon": "icons/" + (key + ".png"),
                 "iconAsset": f'{e["versions"][0]["assetUri"]}/Microsoft.VisualStudio.Services.Icons.Small',
                 "name": e["displayName"],
                 "description": e.get("shortDescription", e["displayName"]),
                 "author": e["publisher"]["displayName"],
-                "authorUrl": "https://marketplace.visualstudio.com/publishers/" + e["publisher"]["publisherName"],
+                "authorUrl": "https://marketplace.visualstudio.com/publishers/"
+                + e["publisher"]["publisherName"],
                 "lastUpdated": parse_date(e["versions"][0]["lastUpdated"]),
                 # "platform": ""
             }
@@ -461,11 +537,19 @@ def dl_extensions(dst_dir, extensions, json_data, engine_version, dry_run, no_go
         if not vsix.is_file():
             if icon.is_file():
                 icon.unlink()
-            print("{:20} {:35} {:10} {} downloading...".format(*key.split("."), data["version"], HEAVY_BALLOT_X))
+            print(
+                "{:20} {:35} {:10} {} downloading...".format(
+                    *key.split("."), data["version"], HEAVY_BALLOT_X
+                )
+            )
             if not dry_run:
                 download(data["vsixAsset"], vsix)
         else:
-            print("{:20} {:35} {:10} {}".format(*key.split("."), data["version"], CHECK_MARK))
+            print(
+                "{:20} {:35} {:10} {}".format(
+                    *key.split("."), data["version"], CHECK_MARK
+                )
+            )
 
         # download icon
         if not icon.is_file():
@@ -568,7 +652,11 @@ def dl_code(dst_dir, channel="stable", revision="latest"):
             if filename.is_file():
                 print("{:50} {:20} {}".format(package, version, CHECK_MARK))
             else:
-                print("{:50} {:20} {} downloading...".format(package, version, HEAVY_BALLOT_X))
+                print(
+                    "{:50} {:20} {} downloading...".format(
+                        package, version, HEAVY_BALLOT_X
+                    )
+                )
                 download(url, filename)
 
     return data
@@ -637,23 +725,48 @@ def download_assets(destination):
     os.chdir(dst_dir)
 
     # markdown-it
-    download("https://cdnjs.cloudflare.com/ajax/libs/markdown-it/8.4.1/markdown-it.min.js", "markdown-it.min.js")
-    download("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js", "highlight.min.js")
-    download("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/vs2015.min.css", "vs2015.min.css")
+    download(
+        "https://cdnjs.cloudflare.com/ajax/libs/markdown-it/8.4.1/markdown-it.min.js",
+        "markdown-it.min.js",
+    )
+    download(
+        "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js",
+        "highlight.min.js",
+    )
+    download(
+        "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/vs2015.min.css",
+        "vs2015.min.css",
+    )
 
     # Mou/MacDown GitHub like stylesheet
-    download("https://raw.githubusercontent.com/gcollazo/mou-theme-github2/master/GitHub2.css", "GitHub2.css")
+    download(
+        "https://raw.githubusercontent.com/gcollazo/mou-theme-github2/master/GitHub2.css",
+        "GitHub2.css",
+    )
 
     # images from VSCode homepage
-    download("https://code.visualstudio.com/assets/images/home-debug.svg", "images/home-debug.svg")
-    download("https://code.visualstudio.com/assets/images/home-git.svg", "images/home-git.svg")
-    download("https://code.visualstudio.com/assets/images/home-intellisense.svg", "images/home-intellisense.svg")
     download(
-        "https://code.visualstudio.com/assets/images/Hundreds-of-Extensions.png", "images/Hundreds-of-Extensions.png"
+        "https://code.visualstudio.com/assets/images/home-debug.svg",
+        "images/home-debug.svg",
+    )
+    download(
+        "https://code.visualstudio.com/assets/images/home-git.svg",
+        "images/home-git.svg",
+    )
+    download(
+        "https://code.visualstudio.com/assets/images/home-intellisense.svg",
+        "images/home-intellisense.svg",
+    )
+    download(
+        "https://code.visualstudio.com/assets/images/Hundreds-of-Extensions.png",
+        "images/Hundreds-of-Extensions.png",
     )
 
     # VSCode icon as favicon
-    download("https://github.com/Microsoft/vscode/raw/master/resources/win32/code.ico", "favicon.ico")
+    download(
+        "https://github.com/Microsoft/vscode/raw/master/resources/win32/code.ico",
+        "favicon.ico",
+    )
 
 
 def print_conf(args):
@@ -662,7 +775,9 @@ def print_conf(args):
     """
 
     try:
-        s = subprocess.check_output("code --list-extensions", shell=True, stderr=subprocess.DEVNULL)
+        s = subprocess.check_output(
+            "code --list-extensions", shell=True, stderr=subprocess.DEVNULL
+        )
         installed = set(s.decode().split())
     except subprocess.CalledProcessError:
         installed = set()
@@ -700,11 +815,15 @@ def download_code_vsix(args):
     else:
 
         if "code" in json_data and "version" in json_data["code"]:
-            engine_version = ".".join(json_data["code"]["version"].split(".")[0:2] + ["0"])
+            engine_version = ".".join(
+                json_data["code"]["version"].split(".")[0:2] + ["0"]
+            )
             if engine_version == "1.29.0":
                 engine_version = "1.29.1"
             logging.debug(
-                "vscode engine version: %s (deduced from version %s)", engine_version, json_data["code"]["version"]
+                "vscode engine version: %s (deduced from version %s)",
+                engine_version,
+                json_data["code"]["version"],
             )
         else:
             engine_version = "*"
@@ -722,7 +841,9 @@ def download_code_vsix(args):
         conf = None
 
     # download extensions
-    dl_extensions(dst_dir, extensions, json_data, engine_version, args.dry_run, args.no_golang)
+    dl_extensions(
+        dst_dir, extensions, json_data, engine_version, args.dry_run, args.no_golang
+    )
 
     # write the JSON data file
     with open(dst_dir / "data.json", "w") as f:
@@ -743,7 +864,9 @@ def server(web_root, port):
         os.chdir(web_root)
         http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler, port=port)
     else:
-        handler_class = partial(http.server.SimpleHTTPRequestHandler, directory=web_root)
+        handler_class = partial(
+            http.server.SimpleHTTPRequestHandler, directory=web_root
+        )
         http.server.test(HandlerClass=handler_class, port=port)
 
 
@@ -753,19 +876,40 @@ def main():
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", help="increase verbosity", action="store_true")
-    parser.add_argument("-c", "--conf", help="configuration file", default="extensions.yaml")
+    parser.add_argument(
+        "-v", "--verbose", help="increase verbosity", action="store_true"
+    )
+    parser.add_argument(
+        "-c", "--conf", help="configuration file", default="extensions.yaml"
+    )
     parser.add_argument("--no-code", help="do not download Code", action="store_true")
-    parser.add_argument("--no-golang", help="do not download Go packages", action="store_true")
+    parser.add_argument(
+        "--no-golang", help="do not download Go packages", action="store_true"
+    )
     parser.add_argument("-e", "--engine", help="set the required engine version")
     parser.add_argument(
-        "-k", "--keep", help="number of old versions to keep", type=int, metavar="N", nargs="?", const=10
+        "-k",
+        "--keep",
+        help="number of old versions to keep",
+        type=int,
+        metavar="N",
+        nargs="?",
+        const=10,
     )
     parser.add_argument(
-        "-Y", "--yaml", help="output a conf file with installed extensions (and exit)", action="store_true"
+        "-Y",
+        "--yaml",
+        help="output a conf file with installed extensions (and exit)",
+        action="store_true",
     )
-    parser.add_argument("--assets", help="download css and images (and exit)", action="store_true")
-    parser.add_argument("--no-assets", help="do not download css and images (and exit)", action="store_true")
+    parser.add_argument(
+        "--assets", help="download css and images (and exit)", action="store_true"
+    )
+    parser.add_argument(
+        "--no-assets",
+        help="do not download css and images (and exit)",
+        action="store_true",
+    )
     parser.add_argument("--cache", help="enable Requests cache", action="store_true")
     parser.add_argument("-r", "--root", help="set the root directory")
     parser.add_argument("-s", "--server", help="HTTP server", action="store_true")
@@ -775,15 +919,25 @@ def main():
     args = parser.parse_args()
 
     if args.verbose:
-        logging.basicConfig(format="%(asctime)s:%(levelname)s:%(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
+        logging.basicConfig(
+            format="%(asctime)s:%(levelname)s:%(message)s",
+            level=logging.DEBUG,
+            datefmt="%H:%M:%S",
+        )
         logging.debug("args {}".format(args))
     else:
-        logging.basicConfig(format="%(asctime)s:%(levelname)s:%(message)s", level=logging.INFO, datefmt="%H:%M:%S")
+        logging.basicConfig(
+            format="%(asctime)s:%(levelname)s:%(message)s",
+            level=logging.INFO,
+            datefmt="%H:%M:%S",
+        )
 
     if args.cache:
         # install a static cache (for developping and comfort reasons)
         expire_after = datetime.timedelta(hours=1)
-        requests_cache.install_cache("cache", allowable_methods=("GET", "POST"), expire_after=expire_after)
+        requests_cache.install_cache(
+            "cache", allowable_methods=("GET", "POST"), expire_after=expire_after
+        )
         requests_cache.core.remove_expired_responses()
 
     args.conf = os.path.abspath(args.conf)
@@ -845,7 +999,9 @@ def win_term():
         ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
 
         mode = ctypes.wintypes.DWORD()
-        if kernel32.GetConsoleMode(kernel32.GetStdHandle(STD_OUTPUT_HANDLE), ctypes.byref(mode)):
+        if kernel32.GetConsoleMode(
+            kernel32.GetStdHandle(STD_OUTPUT_HANDLE), ctypes.byref(mode)
+        ):
             mode = mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING
             kernel32.SetConsoleMode(kernel32.GetStdHandle(STD_OUTPUT_HANDLE), mode)
 
