@@ -422,13 +422,18 @@ def dl_go_packages(dst_dir, vsix, json_data, dry_run, isImportant=True):
 
     # get the list of tools
     z = zipfile.ZipFile(vsix)
-    js = z.read("extension/dist/goMain.js")
+    try:
+        # extensions 0.16+
+        js = z.read("extension/dist/goMain.js")
+    except KeyError:
+        # extensions -> 0.15.2
+        js = z.read("extension/out/src/goTools.js")
+
     m = re.search(rb"exports.allToolsInformation = ({.+?\n});\n", js, re.DOTALL)
-    m = m.group(1)
 
     tools = {}
     tool = {}
-    for i in m.decode().split("\n"):
+    for i in m.group(1).decode().split("\n"):
         if re.match(r"'[-\w]+': {", i.strip()):
             tool = {}
 
