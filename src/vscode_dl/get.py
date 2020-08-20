@@ -225,7 +225,8 @@ def update_go_tools(url, dry_run, tools):
     # get the archive and untar it
     cmd = "curl -skL {}/go-tools.tar.gz | tar -xzf -".format(url)
     if not dry_run:
-        subprocess.call(cmd, shell=True, cwd="/usr/local")
+        goroot_parent = pathlib.Path(subprocess.check_output(["go", "env", "GOROOT"]).decode().strip()).parent
+        subprocess.call(cmd, shell=True, cwd=goroot_parent)
     else:
         print_cmd(cmd)
 
