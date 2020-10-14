@@ -478,6 +478,14 @@ def dl_go_packages(dst_dir, vsix, json_data, dry_run, isImportant=True):
     else:
         subprocess.call(cmd, cwd=dst_dir.as_posix())
 
+        sh = dst_dir / "go-tools.sh"
+        sh.write_text(
+            "#!/bin/sh\n" +
+            "go get \\\n  " +
+            " \\\n  ".join(tool["importPath"] for tool in tools.values()) +
+            "\n")
+        sh.chmod(0o755)
+
     json_data["go-tools"] = tools
 
 

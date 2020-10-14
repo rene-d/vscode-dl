@@ -1,0 +1,5 @@
+# fetch only Go modules: 
+#   ./src/vscode_dl/vscode_dl.py --no-code -c go.yaml
+web_root: web
+extensions:
+- golang.Go
