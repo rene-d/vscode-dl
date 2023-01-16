@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 # rene-d 2018
+# modified DaeHyun Sung, 2023.
 
 import argparse
 import bz2
@@ -138,7 +139,11 @@ def is_engine_valid(engine, extension):
     check if extension version <= engine version
     Nota: the sematic follows https://semver.org
     """
-
+    extv = ""
+    if extension[0] != "^":
+        extv = ''.join(i for i in extension if i.isdigit() or i in './\\')
+    else:
+        extv = ''.join(i for i in extension[1:] if i.isdigit() or i in './\\')
     if engine == "*" or extension == "*":
         return True
     if extension[0] != "^":
@@ -152,7 +157,7 @@ def is_engine_valid(engine, extension):
             )
             return False
     a = list(map(int, engine.split(".")))
-    b = list(map(int, extension[1:].split(".")))
+    b = list(map(int, extv.split(".")))
     return a >= b
 
 
@@ -429,7 +434,7 @@ def dl_go_packages(dst_dir, vsix, json_data, dry_run, isImportant=True):
         # extensions -> 0.15.2
         js = z.read("extension/out/src/goTools.js")
 
-    m = re.search(rb"exports.allToolsInformation = ({.+?\n});\n", js, re.DOTALL)
+    m = re.search(rb"allToolsInformation = ({.+?\n});\n", js, re.DOTALL)
 
     tools = {}
     tool = {}
