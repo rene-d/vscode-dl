@@ -1,11 +1,10 @@
 FROM alpine:latest
 
 RUN apk update \
-&&  apk add --no-cache python3 \
-&&  python3 -mpip install --upgrade pip
-
-# Go tools require Go and git to run "go get" commands
-RUN apk add --no-cache go git
+&& apk add --no-cache --virtual .build-deps g++ libffi-dev openssl-dev \
+&& apk add python3 python3-dev py-pip go git \
+&& apk del .build-deps \
+&& pip3 install --upgrade pip setuptools
 
 VOLUME /app/web
 
